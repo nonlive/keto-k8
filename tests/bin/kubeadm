@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+[[ $(docker images -q kubeadm) == '' ]] && docker build -t kubeadm .
+
+home_dir=$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )
+cd ${home_dir}
+
+docker run -i \
+    -v /private/etc/kubernetes:/etc/kubernetes \
+    -v ${home_dir}:${home_dir} \
+    --entrypoint=/bin/kubeadm \
+    kubeadm \
+    $@
