@@ -7,6 +7,7 @@ import (
 	"net"
 
 	certutil "github.com/UKHomeOffice/kmm/pkg/client-go/util/cert"
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/UKHomeOffice/kmm/pkg/kubeadm/pkiutil"
 	"github.com/UKHomeOffice/kmm/pkg/fileutil"
@@ -69,7 +70,7 @@ func GenCerts(cfg ServerConfig) (err error) {
 		if err != nil || caKey == nil {
 			return fmt.Errorf("CA key existed but could not be loaded properly %q", cfg.CaKeyFileName)
 		}
-		fmt.Printf("Found and verified CA certificate %q and key %q.\n", cfg.ClientConfig.CaFileName, cfg.CaKeyFileName)
+		log.Printf("Found and verified CA certificate %q and key %q.", cfg.ClientConfig.CaFileName, cfg.CaKeyFileName)
 	}
 
 	// Generate the ETCD server cert and key file (if required)
@@ -140,7 +141,7 @@ func checkOrCreateCert(certFile, keyFile string, caCert *x509.Certificate, caKey
 			return fmt.Errorf("key existed but they could not be loaded properly %q", keyFile)
 		}
 
-		fmt.Printf("Using cert:%q and key %q\n", certFile, keyFile)
+		log.Printf("Using cert:%q and key %q", certFile, keyFile)
 	} else {
 		// The certificate and / or the key did NOT exist, let's generate them now
 		cert, key, err := pkiutil.NewCertAndKey(caCert, caKey, config)
@@ -153,8 +154,8 @@ func checkOrCreateCert(certFile, keyFile string, caCert *x509.Certificate, caKey
 		if err = certutil.WriteKey(keyFile, certutil.EncodePrivateKeyPEM(key)); err != nil {
 			return fmt.Errorf("failure while saving key %q [%v]",keyFile, err)
 		}
-		fmt.Printf("Generated cert %q.\n", certFile)
-		fmt.Printf("Generated key %q.\n", keyFile)
+		log.Printf("Generated cert %q.", certFile)
+		log.Printf("Generated key %q.", keyFile)
 	}
 	return nil
 }

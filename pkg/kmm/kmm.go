@@ -4,7 +4,7 @@ import (
 	"os"
 	"time"
 	"errors"
-	"log"
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/UKHomeOffice/kmm/pkg/etcd"
 	"github.com/UKHomeOffice/kmm/pkg/kubeadm"
@@ -63,13 +63,13 @@ func GetAssets(cfg Config) (err error) {
 				return err
 			}
 			if mylock {
-				log.Printf("Obtained lock, creating assets...\n")
+				log.Printf("Obtained lock, creating assets...")
 
 				// We can create the master assets here
  				err = kubeadm.CreatePKI(cfg.KubeadmCfg)
 				if err == nil {
 					pkiCreated = true
-					log.Printf("Loading assets off disk...\n")
+					log.Printf("Loading assets off disk...")
 					assets, err = kubeadm.GetAssets(cfg.KubeadmCfg)
 					if err == nil {
 						err = etcd.PutTx(cfg.KubeadmCfg.EtcdClientConfig, AssetKey, assets)
@@ -78,7 +78,7 @@ func GetAssets(cfg Config) (err error) {
 				if err != nil {
 					errC := CleanUp(cfg, true, false)
 					if errC != nil {
-						log.Printf("Error releasing Lock HELP!\n")
+						log.Printf("Error releasing Lock HELP!")
 					}
 					return err
 				}
@@ -91,7 +91,7 @@ func GetAssets(cfg Config) (err error) {
 			return err
 		} else {
 			// Assest present in etcd so save assets
-			log.Printf("Saving assets to disk...\n")
+			log.Printf("Saving assets to disk...")
 			if err := kubeadm.SaveAssets(cfg.KubeadmCfg, assets); err != nil {
 				return err
 			}
@@ -110,14 +110,14 @@ func GetAssets(cfg Config) (err error) {
 func CleanUp(cfg Config, releaseLock bool, deleteAssets bool) (err error) {
 
 	if releaseLock {
-		log.Printf("Releasing lock...\n")
+		log.Printf("Releasing lock...")
 		if err = etcd.Delete(cfg.KubeadmCfg.EtcdClientConfig, AssetLockKey); err != nil {
 			return err
 		}
-		log.Printf("Released lock\n")
+		log.Printf("Released lock")
 	}
 	if deleteAssets {
-		log.Printf("Releasing assets...\n")
+		log.Printf("Releasing assets...")
 		if err = etcd.Delete(cfg.KubeadmCfg.EtcdClientConfig, AssetKey); err != nil {
 			return err
 		}

@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"os/exec"
 	"io/ioutil"
-	"log"
 	"strings"
 
 	certutil "github.com/UKHomeOffice/kmm/pkg/client-go/util/cert"
 	kubeadmconstants "github.com/UKHomeOffice/kmm/pkg/kubeadm/constants"
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/UKHomeOffice/kmm/pkg/kubeadm/pkiutil"
 	"github.com/UKHomeOffice/kmm/pkg/etcd"
@@ -167,7 +167,7 @@ func runKubeadm(cfg Config, cmdArgs []string) (out string, err error) {
 	var cmdOut []byte
 
 	cmdName := CmdKubeadm
-	log.Printf("Running:%v %v\n", cmdName, strings.Join(cmdArgs, " "))
+	log.Printf("Running:%v %v", cmdName, strings.Join(cmdArgs, " "))
 	if cmdOut, err = exec.Command(cmdName, cmdArgs...).CombinedOutput(); err != nil {
 		return string(cmdOut[:]), err
 	}

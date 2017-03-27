@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"log"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/UKHomeOffice/kmm/pkg/kmm"
 	"github.com/UKHomeOffice/kmm/pkg/kubeadm"

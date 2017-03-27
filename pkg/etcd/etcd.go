@@ -1,10 +1,10 @@
 package etcd
 
 import (
-	"log"
 	"time"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"golang.org/x/net/context"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/clientv3util"
@@ -34,7 +34,7 @@ func Get(cfg ClientConfig, key string) (value string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	cli, err := getEtcdClient(cfg, Timeout)
 	if err != nil {
-		log.Printf("Error getting client:%q\n", err)
+		log.Printf("Error getting client:%q", err)
 		return "", err
 	}
 	defer cli.Close()
@@ -48,7 +48,7 @@ func Get(cfg ClientConfig, key string) (value string, err error) {
 			return "", ErrKeyMissing
 		}
 		for _, ev := range getresp.Kvs {
-			//log.Printf("%q values: key: %q = %q, version=%q\n", key, ev.Key, ev.Value, ev.Version)
+			log.Debugf("%q values: key: %q = %q, version=%q\n", key, ev.Key, ev.Value, ev.Version)
 			value = string(ev.Value[:])
 			break
 		}
@@ -67,12 +67,12 @@ func GetLock(cfg ClientConfig, key string) (mylock bool, err error) {
 	err = setLock(cfg, key)
 	if err != nil {
 		if err == ErrKeyAlreadyExists {
-			log.Printf("Lock allready created...\n")
+			log.Printf("Lock allready created...")
 			// Need to check TTL and if required, transactionally re-create Lock..
 			mylock, err = tryRecreateLock(cfg, key)
 		}
 	} else {
-		log.Printf("Lock obtained...\n")
+		log.Printf("Lock obtained...")
 		mylock = true
 	}
 	return mylock, err
@@ -94,7 +94,7 @@ func tryRecreateLock(cfg ClientConfig, key string) (recreated bool, err error) {
 	othersTtlString, err := Get(cfg, key)
 	if err != nil {
 		// Shouldn't get this unless terminal...
-		log.Printf("Lock (key - %q) not obtained, Can't get key:%q\n", key, err)
+		log.Printf("Lock (key - %q) not obtained, Can't get key:%q", key, err)
 		return false, err
 	} else {
 		// We have old TTL - parse it
@@ -109,7 +109,7 @@ func tryRecreateLock(cfg ClientConfig, key string) (recreated bool, err error) {
 			if time.Now().After(otherTtlTime) {
 				err = overWriteLock(cfg, key)
 			} else {
-				log.Printf("Lock (key - %q) not obtained, TTL exists:%q\n", key, othersTtlString)
+				log.Printf("Lock (key - %q) not obtained, TTL exists:%q", key, othersTtlString)
 				return false, nil
 			}
 		}
@@ -120,11 +120,11 @@ func tryRecreateLock(cfg ClientConfig, key string) (recreated bool, err error) {
 func overWriteLock(cfg ClientConfig, key string) (err error) {
 	err = Delete(cfg, key)
 	if err != nil {
-		log.Printf("Failed deleteing lock:%q\n", key)
+		log.Printf("Failed deleteing lock:%q", key)
 	}
 	err = setLock(cfg, key)
 	if err != nil {
-		log.Printf("Failed creating lock:%q\n", key)
+		log.Printf("Failed creating lock:%q", key)
 	}
 	return err
 }
@@ -172,7 +172,7 @@ func PutTx(cfg ClientConfig, key string, value string) (err error) {
 		log.Printf("Transaction didn't succeed - we didn't create lock!")
 		err = ErrKeyAlreadyExists
 	} else {
-		//log.Printf("Created item:%q...\n", value)
+		log.Debugf("Created item:%q...", value)
 	}
 	return err
 }

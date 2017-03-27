@@ -1,13 +1,13 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
-	"log"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/UKHomeOffice/kmm/pkg/etcd"
 	"github.com/spf13/cobra"
-	"fmt"
 )
 
 // versionCmd represents the version command

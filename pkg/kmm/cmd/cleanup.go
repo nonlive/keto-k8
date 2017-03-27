@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"log"
 	"os"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/UKHomeOffice/kmm/pkg/kmm"
 	"github.com/spf13/cobra"
 )
