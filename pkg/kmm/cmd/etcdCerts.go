@@ -67,18 +67,20 @@ func getConfig(cmd *cobra.Command) (etcd.ServerConfig, error) {
 	minimalDefaultHosts := []string{"localhost", "127.0.0.1"}
 	etcdLocalHostnames := strings.Split(cmd.Flag("etcd-local-hostnames").Value.String(), ",")
 	if len(etcdLocalHostnames[0]) == 0 {
-		if etcdLocalHostnames, err = GetHostNamesFromEnvUrls("ETCD_ADVERTISE_CLIENT_URLS", minimalDefaultHosts);
-			err != nil {
-
+		if etcdLocalHostnames, err = GetHostNamesFromEnvUrls("ETCD_ADVERTISE_CLIENT_URLS", minimalDefaultHosts); err != nil {
 			return cfg, err
 		}
 	}
 	etcdClusterHostnames := strings.Split(cmd.Flag("etcd-cluster-hostnames").Value.String(), ",")
 	if len(etcdClusterHostnames) -1 == 0 {
-		if etcdClusterHostnames, err = GetHostNamesFromEnvUrls("ETCD_INITIAL_CLUSTER", minimalDefaultHosts);
-			err != nil {
-
+		var etcdClusterUrls string
+		if etcdClusterUrls, err = GetUrlsFromInitialClusterString(os.Getenv("ETCD_INITIAL_CLUSTER")); err != nil {
 			return cfg, err
+		} else {
+			if etcdClusterHostnames, err = GetHostNamesFromUrls(etcdClusterUrls, minimalDefaultHosts);
+			err != nil {
+				return cfg, err
+			}
 		}
 	}
 

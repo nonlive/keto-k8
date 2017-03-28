@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 	"os"
 	"strings"
@@ -45,13 +46,29 @@ func getEtcdClientConfig(cmd *cobra.Command) (cfg etcd.ClientConfig, err error) 
 	return etcdConfig, nil
 }
 
+// Should return a , separated§ list of urls
+func GetUrlsFromInitialClusterString(initialCluster string) (string, error) {
+	clusterValues := deleteEmpty(strings.Split(initialCluster, ","))
+	urls := make([]string, len(clusterValues))
+
+	for i, s := range clusterValues {
+		ary := strings.Split(s, "=")
+		if len(ary) != 2 {
+			return "", fmt.Errorf("Error parsing %q, expecting name=url format in string %q",s,initialCluster)
+		}
+		// return the url value from an etcd initial cluster string
+		urls[i] = ary[1]
+	}
+	return strings.Join(urls[:],","), nil
+}
+
 func GetHostNamesFromEnvUrls(envName string, minimalDefault []string) ([]string, error) {
 	urls := os.Getenv(envName)
 	return GetHostNamesFromUrls(urls, minimalDefault)
 }
 
-// Will parse valid host-names and CN adding localhost...
-func GetHostNamesFromUrls(urls string, mimimalDefault []string) ([]string, error) {
+// Will parse host-names and adding specified additional extra minimal names...
+func GetHostNamesFromUrls(urls string, minimalDefault []string) ([]string, error) {
 	urlsa := deleteEmpty(strings.Split(urls, ","))
 	hosts := make([]string, len(urlsa))
 	for i, s := range urlsa {
@@ -59,10 +76,11 @@ func GetHostNamesFromUrls(urls string, mimimalDefault []string) ([]string, error
 		if err != nil {
 			return nil, fmt.Errorf("Error parsing %s [%v]", s, err)
 		}
-		hosts[i] = url.Host
+		host, _, _ := net.SplitHostPort(url.Host)
+		hosts[i] = host
 	}
-	if len(mimimalDefault) > 0 {
-		hosts = append(hosts, mimimalDefault...)
+	if len(minimalDefault) > 0 {
+		hosts = append(hosts, minimalDefault...)
 	}
 	return hosts, nil
 }
