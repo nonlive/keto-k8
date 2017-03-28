@@ -4,6 +4,7 @@ import (
     "fmt"
     "io"
     "os"
+    "strings"
 )
 
 // CopyFile copies a file from src to dst. If src and dst files exist, and are
@@ -53,7 +54,9 @@ func ExistFile(file string) (bool) {
 // between the two files.
 func SymlinkFile(tgt, ln string) (err error) {
 	pwd, _ := os.Getwd()
-	tgt = pwd + "/" + tgt
+	if ! strings.HasPrefix(tgt, "/") {
+        tgt = pwd + "/" + tgt
+    }
 	sfi, err := os.Stat(tgt)
 	if err != nil {
 		return err

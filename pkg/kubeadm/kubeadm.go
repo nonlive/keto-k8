@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"io/ioutil"
 	"strings"
+	"net"
+	"net/url"
 
 	certutil "github.com/UKHomeOffice/kmm/pkg/client-go/util/cert"
 	kubeadmconstants "github.com/UKHomeOffice/kmm/pkg/kubeadm/constants"
@@ -32,7 +34,7 @@ type Config struct {
 	EtcdClientConfig	etcd.ClientConfig
 	CaCert				string
 	CaKey				string
-	ApiServer			string
+	ApiServer			*url.URL
 	KubeletId			string
 }
 
@@ -115,7 +117,8 @@ func SaveAssets(cfg Config, assets string) (err error) {
 
 // Create all PKI assests on disk
 func CreatePKI(cfg Config) (err error) {
-	args := append(CmdOptsCerts, cfg.ApiServer)
+	apiHost, _, _ := net.SplitHostPort(cfg.ApiServer.Host)
+	args := append(CmdOptsCerts, apiHost)
 	kubeadmOut, err := runKubeadm(cfg, args)
 	log.Printf("Output:\n" + kubeadmOut)
 	return err
@@ -123,22 +126,22 @@ func CreatePKI(cfg Config) (err error) {
 
 func CreateKubeConfig(cfg Config) (err error) {
 	if err = createAKubeCfg(cfg, kubeadmconstants.AdminKubeConfigFileName,
-		"kubernetes-admin", kubeadmconstants.MastersGroup); err !=nil {
+		"kubernetes-admin", kubeadmconstants.MastersGroup); err != nil {
 
 		return err
 	}
 	if err = createAKubeCfg(cfg, kubeadmconstants.KubeletKubeConfigFileName,
-		"system:node:" + cfg.KubeletId, kubeadmconstants.NodesGroup); err !=nil {
+		"system:node:" + cfg.KubeletId, kubeadmconstants.NodesGroup); err != nil {
 
 		return err
 	}
 	if err = createAKubeCfg(cfg, kubeadmconstants.ControllerManagerKubeConfigFileName,
-		kubeadmconstants.ControllerManagerUser, ""); err !=nil {
+		kubeadmconstants.ControllerManagerUser, ""); err != nil {
 
 		return err
 	}
 	if err = createAKubeCfg(cfg, kubeadmconstants.SchedulerKubeConfigFileName,
-		kubeadmconstants.SchedulerUser, ""); err !=nil {
+		kubeadmconstants.SchedulerUser, ""); err != nil {
 		return err
 	}
 	return nil
@@ -147,19 +150,21 @@ func CreateKubeConfig(cfg Config) (err error) {
 // Run kubeadm to create a kubeconfig file...
 func createAKubeCfg(cfg Config, file string, cn string, org string) (err error) {
 	args := append(CmdOptsKubeconfig,
-		"--client-name ", cn,
-		"--server", cfg.ApiServer)
+		"--client-name", cn,
+		"--server", cfg.ApiServer.String())
 
 	if len(org) > 0 {
 		args = append(args,
-			"--organization ", org)
+			"--organization", org)
 	}
 
 	kubecfgContents, err :=	runKubeadm(cfg, args)
 	if err != nil {
-		return err
+		return fmt.Errorf("Error running kubeadm:%s", kubecfgContents)
 	}
-	err = ioutil.WriteFile(PkiDir + "/" + file, []byte(kubecfgContents), 0600)
+	filePath := kubeadmconstants.KubernetesDir + "/" + file
+	log.Printf("Saving:%q", filePath)
+	err = ioutil.WriteFile(filePath, []byte(kubecfgContents), 0600)
 	return err
 }
 

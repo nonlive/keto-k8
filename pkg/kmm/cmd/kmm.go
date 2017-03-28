@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 
 	log "github.com/Sirupsen/logrus"
@@ -77,13 +78,18 @@ func getKmmConfig(cmd *cobra.Command) (cfg kmm.Config, err error) {
 	if err != nil {
 		return cfg, err
 	}
+	apiServer := cmd.Flag("kube-server").Value.String()
+	if len(apiServer) < 1 {
+		return cfg, fmt.Errorf("Api server name must be specified")
+	}
+	url, err := url.Parse(apiServer)
+	if err != nil {
+		return cfg, fmt.Errorf("Error parsing Api server %s [%v]", apiServer, err)
+	}
 	kubeadmConfig := kubeadm.Config{
-		ApiServer:			cmd.Flag("kube-server").Value.String(),
+		ApiServer:			url,
 		KubeletId:			cmd.Flag("kube-kubeletid").Value.String(),
 		EtcdClientConfig: 	etcdConfig,
-	}
-	if len(kubeadmConfig.ApiServer) < 1 {
-		return cfg, fmt.Errorf("Api server name must be specified")
 	}
 
 	cfg = kmm.Config{
