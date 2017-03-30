@@ -71,6 +71,8 @@ func GenCerts(cfg ServerConfig) (err error) {
 			return fmt.Errorf("CA key existed but could not be loaded properly %q", cfg.CaKeyFileName)
 		}
 		log.Printf("Found and verified CA certificate %q and key %q.", cfg.ClientConfig.CaFileName, cfg.CaKeyFileName)
+	} else {
+		return fmt.Errorf("ETCD CA key %q and cert %q must both exist before certs can be created.", cfg.CaKeyFileName, cfg.ClientConfig.CaFileName)
 	}
 
 	// Generate the ETCD server cert and key file (if required)
