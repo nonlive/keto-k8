@@ -46,7 +46,7 @@ func getEtcdClientConfig(cmd *cobra.Command) (cfg etcd.ClientConfig, err error) 
 	return etcdConfig, nil
 }
 
-// Should return a , separated§ list of urls
+// Should return a , separated list of urls
 func GetUrlsFromInitialClusterString(initialCluster string) (string, error) {
 	clusterValues := deleteEmpty(strings.Split(initialCluster, ","))
 	urls := make([]string, len(clusterValues))

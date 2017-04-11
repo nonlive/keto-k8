@@ -90,7 +90,7 @@ func GetAssets(cfg Config) (err error) {
 		} else if err != nil {
 			return err
 		} else {
-			// Assest present in etcd so save assets
+			// Assets present in etcd so save assets
 			log.Printf("Saving assets to disk...")
 			if err := kubeadm.SaveAssets(cfg.KubeadmCfg, assets); err != nil {
 				return err
@@ -103,7 +103,13 @@ func GetAssets(cfg Config) (err error) {
 			return err
 		}
 	}
-	err = kubeadm.CreateKubeConfig(cfg.KubeadmCfg)
+	if err = kubeadm.CreateKubeConfig(cfg.KubeadmCfg) ; err != nil {
+		return err
+	}
+	if pkiCreated {
+		// TODO: Will need to do something later to cope with upgrades
+		err = kubeadm.Addons(cfg.KubeadmCfg)
+	}
 	return err
 }
 
