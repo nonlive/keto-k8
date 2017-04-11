@@ -1,0 +1,6 @@
+package: github.com/UKHomeOffice/kmm
+import:
+- package: github.com/spf13/cobra
+- package: github.com/spf13/viper
+- package: k8s.io/kubernetes
+  version: 1.6.1
