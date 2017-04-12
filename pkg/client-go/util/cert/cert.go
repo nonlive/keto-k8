@@ -94,6 +94,7 @@ func NewSignedCert(cfg Config, key *rsa.PrivateKey, caCert *x509.Certificate, ca
 	if len(cfg.Usages) == 0 {
 		return nil, errors.New("must specify at least one ExtKeyUsage")
 	}
+	// Added this to work with CA's generated with cfssl
 	now := time.Now()
 	certTmpl := x509.Certificate{
 		Subject: pkix.Name{
@@ -103,11 +104,11 @@ func NewSignedCert(cfg Config, key *rsa.PrivateKey, caCert *x509.Certificate, ca
 		DNSNames:     cfg.AltNames.DNSNames,
 		IPAddresses:  cfg.AltNames.IPs,
 		SerialNumber: serial,
-		NotBefore:    now.UTC(),
+		NotBefore:    now.UTC(), // Added, See above
 		NotAfter:     time.Now().Add(duration365d).UTC(),
 		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  cfg.Usages,
-		BasicConstraintsValid: true,
+		BasicConstraintsValid: true, // Needed to work for etcd peer certs
 		AuthorityKeyId: caCert.AuthorityKeyId,
 	}
 	certDERBytes, err := x509.CreateCertificate(cryptorand.Reader, &certTmpl, caCert, key.Public(), caKey)

@@ -117,7 +117,11 @@ func SaveAssets(cfg Config, assets string) (err error) {
 
 // Create all PKI assests on disk
 func CreatePKI(cfg Config) (err error) {
-	apiHost, _, _ := net.SplitHostPort(cfg.ApiServer.Host)
+	var apiHost string
+	if apiHost, _, err = net.SplitHostPort(cfg.ApiServer.Host) ; err != nil {
+		return err
+	}
+	log.Printf("Using host:%q", apiHost)
 	args := append(CmdOptsCerts, apiHost)
 	kubeadmOut, err := runKubeadm(cfg, args)
 	log.Printf("Output:\n" + kubeadmOut)
