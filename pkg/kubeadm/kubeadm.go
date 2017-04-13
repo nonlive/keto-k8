@@ -12,7 +12,7 @@ import (
 	"net/url"
 
 	certutil "github.com/UKHomeOffice/kmm/pkg/client-go/util/cert"
-	kubeadmconstants "github.com/UKHomeOffice/kmm/pkg/kubeadm/constants"
+	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/UKHomeOffice/kmm/pkg/kubeadm/pkiutil"
@@ -36,6 +36,8 @@ type Config struct {
 	CaKey				string
 	ApiServer			*url.URL
 	KubeletId			string
+	CloudProvider		string
+	KubeVersion			string
 }
 
 type SharedAssets struct {

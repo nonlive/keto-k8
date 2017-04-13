@@ -29,10 +29,6 @@ var EtcdCertsCmd = &cobra.Command{
 
 func init() {
 	EtcdCertsCmd.Flags().String(
-		"etcd-ca-key",
-		getDefaultFromEnvs([]string{"KMM_ETCD_CA_KEY", ""}, ""),
-		"ETCD CA cert file (defaults: KMM_ETCD_CA_KEY)")
-	EtcdCertsCmd.Flags().String(
 		"etcd-server-cert",
 		getDefaultFromEnvs([]string{"KMM_ETCD_SERVER_CERT", "ETCD_CERT_FILE"}, ""),
 		"ETCD server cert file (defaults: KMM_ETCD_SERVER_CERT / ETCD_CERT_FILE)")

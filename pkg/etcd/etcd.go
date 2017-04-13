@@ -23,7 +23,7 @@ type ClientConfig struct {
 
 var (
 	Timeout = 5 * time.Second
-	MaxTransactionTime = 20 * time.Second
+	MaxTransactionTime = 120 * time.Second
 )
 
 // Will return:
