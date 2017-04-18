@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net"
 
-	certutil "github.com/UKHomeOffice/kmm/pkg/client-go/util/cert"
+	certutil "github.com/UKHomeOffice/keto-k8/pkg/client-go/util/cert"
 	log "github.com/Sirupsen/logrus"
 
-	"github.com/UKHomeOffice/kmm/pkg/kubeadm/pkiutil"
-	"github.com/UKHomeOffice/kmm/pkg/fileutil"
+	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm/pkiutil"
+	"github.com/UKHomeOffice/keto-k8/pkg/fileutil"
 )
 
 type ServerConfig struct {

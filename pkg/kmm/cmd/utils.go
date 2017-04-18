@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/UKHomeOffice/kmm/pkg/etcd"
+	"github.com/UKHomeOffice/keto-k8/pkg/etcd"
 )
 
 const EtcdCertsCmdName string = "etcdcerts"

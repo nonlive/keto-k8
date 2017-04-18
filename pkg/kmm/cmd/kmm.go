@@ -7,8 +7,8 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/UKHomeOffice/kmm/pkg/kmm"
-	"github.com/UKHomeOffice/kmm/pkg/kubeadm"
+	"github.com/UKHomeOffice/keto-k8/pkg/kmm"
+	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm"
 )
 
 var (

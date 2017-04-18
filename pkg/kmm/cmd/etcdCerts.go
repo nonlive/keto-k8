@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/UKHomeOffice/kmm/pkg/etcd"
+	"github.com/UKHomeOffice/keto-k8/pkg/etcd"
 	"github.com/spf13/cobra"
 )
 

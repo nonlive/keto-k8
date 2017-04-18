@@ -4,13 +4,13 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/UKHomeOffice/kmm/pkg/kmm"
+	"github.com/UKHomeOffice/keto-k8/pkg/kmm"
 	"github.com/spf13/cobra"
 )
 
 // versionCmd represents the version command
 var manifestsCmd = &cobra.Command{
-	Use:   "manifests",
+	Use:   "write-manifests",
 	Short: "Writes kubernetes static manifests",
 	Long:  "Writes kubernetes static manifests to /etc/kubernetes/manifests",
 	Run: func(c *cobra.Command, args []string) {
@@ -30,5 +30,5 @@ func manifests(c *cobra.Command) {
 }
 
 func init() {
-	RootCmd.AddCommand(cleanupCmd)
+	RootCmd.AddCommand(manifestsCmd)
 }

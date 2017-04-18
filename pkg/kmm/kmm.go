@@ -8,9 +8,9 @@ import (
 	"fmt"
 	log "github.com/Sirupsen/logrus"
 
-	"github.com/UKHomeOffice/kmm/pkg/etcd"
-	"github.com/UKHomeOffice/kmm/pkg/kubeadm"
-	"github.com/UKHomeOffice/kmm/pkg/fileutil"
+	"github.com/UKHomeOffice/keto-k8/pkg/etcd"
+	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm"
+	"github.com/UKHomeOffice/keto-k8/pkg/fileutil"
 	"github.com/UKHomeOffice/keto/pkg/cloudprovider"
 )
 
