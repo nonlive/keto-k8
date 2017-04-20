@@ -79,6 +79,10 @@ func init() {
 		"etcd-ca-key",
 		getDefaultFromEnvs([]string{"KMM_ETCD_CA_KEY", ""}, ""),
 		"ETCD CA cert file (defaults: KMM_ETCD_CA_KEY)")
+	RootCmd.PersistentFlags().String(
+		"etcd-cluster-hostnames",
+		getDefaultFromEnvs([]string{"KMM_ETCD_CLUSTER_HOSTNAMES"}, ""),
+		"ETCD hostnames (defaults: KMM_ETCD_CLUSTER_HOSTNAMES or parsed from ETCD_INITIAL_CLUSTER)")
 }
 
 // Will return a valid Kmm.Config object for the relevant flags...
@@ -96,12 +100,17 @@ func getKmmConfig(cmd *cobra.Command) (cfg kmm.Config, err error) {
 			return cfg, fmt.Errorf("Error parsing Api server %s [%v]", apiServer, err)
 		}
 	}
+	var masterHosts []string
+	if masterHosts, err = GetEtcdHostNames(cmd, []string{}); err != nil {
+		return cfg, err
+	}
 	kubeadmConfig := kubeadm.Config{
 		ApiServer:			url,
 		KubeVersion:		cmd.Flag("kube-version").Value.String(),
 		KubeletId:			cmd.Flag("kube-kubeletid").Value.String(),
 		CloudProvider:		cmd.Flag("cloud-provider").Value.String(),
 		EtcdClientConfig: 	etcdConfig,
+		MasterCount:		uint(len(masterHosts)),
 	}
 
 	cfg = kmm.Config{

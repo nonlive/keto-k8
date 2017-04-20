@@ -6,15 +6,10 @@ import (
 )
 
 func WriteManifests(kubeadmCfg Config) (err error) {
+	// Get config into kubeadm format
 	var cfg *kubeadmapi.MasterConfiguration
 	if cfg, err = GetKubeadmCfg(kubeadmCfg); err != nil {
 		return err
 	}
-	if cfg == nil {
-		return nil
-	}
-	if master.WriteStaticPodManifests(cfg) ; err != nil {
-		return err
-	}
-	return nil
+	return master.WriteStaticPodManifests(cfg, kubeadmCfg.MasterCount)
 }
