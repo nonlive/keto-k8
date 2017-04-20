@@ -11,12 +11,12 @@ import (
 	"net"
 	"net/url"
 
-	certutil "github.com/UKHomeOffice/kmm/pkg/client-go/util/cert"
-	kubeadmconstants "github.com/UKHomeOffice/kmm/pkg/kubeadm/constants"
+	certutil "github.com/UKHomeOffice/keto-k8/pkg/client-go/util/cert"
+	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	log "github.com/Sirupsen/logrus"
 
-	"github.com/UKHomeOffice/kmm/pkg/kubeadm/pkiutil"
-	"github.com/UKHomeOffice/kmm/pkg/etcd"
+	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm/pkiutil"
+	"github.com/UKHomeOffice/keto-k8/pkg/etcd"
 )
 
 const CmdKubeadm string = "kubeadm"
@@ -36,6 +36,8 @@ type Config struct {
 	CaKey				string
 	ApiServer			*url.URL
 	KubeletId			string
+	CloudProvider		string
+	KubeVersion			string
 }
 
 type SharedAssets struct {

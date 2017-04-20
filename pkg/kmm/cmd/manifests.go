@@ -9,19 +9,19 @@ import (
 )
 
 // versionCmd represents the version command
-var cleanupCmd = &cobra.Command{
-	Use:   "cleanup",
-	Short: "cleanup",
-	Long:  "cleanup",
+var manifestsCmd = &cobra.Command{
+	Use:   "write-manifests",
+	Short: "Writes kubernetes static manifests",
+	Long:  "Writes kubernetes static manifests to /etc/kubernetes/manifests",
 	Run: func(c *cobra.Command, args []string) {
-		cleanUp(c)
+		manifests(c)
 	},
 }
 
-func cleanUp(c *cobra.Command) {
+func manifests(c *cobra.Command) {
 	cfg, err := getKmmConfig(c)
 	if err == nil {
-		err = kmm.CleanUp(cfg, true, true)
+		err = kmm.Manifests(cfg.KubeadmCfg)
 	}
 	if err != nil {
 		log.Fatal(err)
@@ -30,5 +30,5 @@ func cleanUp(c *cobra.Command) {
 }
 
 func init() {
-	RootCmd.AddCommand(cleanupCmd)
+	RootCmd.AddCommand(manifestsCmd)
 }

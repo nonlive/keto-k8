@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/UKHomeOffice/kmm/pkg/version"
+	"github.com/UKHomeOffice/keto-k8/pkg/version"
 	"github.com/spf13/cobra"
 )
 

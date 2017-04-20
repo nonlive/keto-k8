@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/UKHomeOffice/kmm/pkg/etcd"
+	"github.com/UKHomeOffice/keto-k8/pkg/etcd"
 	"github.com/spf13/cobra"
 )
 
@@ -28,10 +28,6 @@ var EtcdCertsCmd = &cobra.Command{
 }
 
 func init() {
-	EtcdCertsCmd.Flags().String(
-		"etcd-ca-key",
-		getDefaultFromEnvs([]string{"KMM_ETCD_CA_KEY", ""}, ""),
-		"ETCD CA cert file (defaults: KMM_ETCD_CA_KEY)")
 	EtcdCertsCmd.Flags().String(
 		"etcd-server-cert",
 		getDefaultFromEnvs([]string{"KMM_ETCD_SERVER_CERT", "ETCD_CERT_FILE"}, ""),

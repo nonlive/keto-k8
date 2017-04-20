@@ -1,6 +1,8 @@
-package: github.com/UKHomeOffice/kmm
+package: github.com/UKHomeOffice/keto-k8
 import:
 - package: github.com/spf13/cobra
 - package: github.com/spf13/viper
+- package: k8s.io/client-go
+  version: v2.0.0
 - package: k8s.io/kubernetes
   version: 1.6.1

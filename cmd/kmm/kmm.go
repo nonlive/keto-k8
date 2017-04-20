@@ -17,7 +17,8 @@ limitations under the License.
 package main
 
 import (
-	"github.com/UKHomeOffice/kmm/pkg/kmm/cmd"
+	"github.com/UKHomeOffice/keto-k8/pkg/kmm/cmd"
+	_ "github.com/UKHomeOffice/keto/pkg/cloudprovider/providers"
 )
 
 func main() {

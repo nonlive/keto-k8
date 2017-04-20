@@ -5,7 +5,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/UKHomeOffice/kmm/pkg/kubeadm"
+	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm"
 )
 
 // versionCmd represents the version command

@@ -1,0 +1,1 @@
+../../../vendor/k8s.io/kubernetes/cmd/kubeadm/app/master/manifests.go

@@ -49,7 +49,7 @@ func ExistFile(file string) (bool) {
 	}
 }
 
-// SymlinkFile creats link (ln) to a file (tgt). If tgt and ln files exist, and are
+// SymlinkFile creates link (ln) to a file (tgt). If tgt and ln files exist, and are
 // the same, then return success. Otherwise, attempt to create or overwrite a symlink
 // between the two files.
 func SymlinkFile(tgt, ln string) (err error) {
