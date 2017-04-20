@@ -11,6 +11,8 @@ import (
 	"github.com/UKHomeOffice/keto-k8/pkg/etcd"
 	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm"
 	"github.com/UKHomeOffice/keto-k8/pkg/fileutil"
+	"github.com/UKHomeOffice/keto-k8/pkg/constants"
+	"github.com/UKHomeOffice/keto-k8/pkg/network"
 	"github.com/UKHomeOffice/keto/pkg/cloudprovider"
 )
 
@@ -28,6 +30,9 @@ type Config struct {
 	  */
 	KubePersistentCaCert string
 	KubePersistentCaKey  string
+
+	// network provider string
+	NetworkProvider		string
 }
 
 type KmmAssets struct {
@@ -125,6 +130,14 @@ func CleanUp(cfg Config, releaseLock bool, deleteAssets bool) (err error) {
 	return nil
 }
 
+func InstallNetwork(networkProvider string) (error) {
+	if np, err := network.CreateNetworkProvider(networkProvider); err != nil {
+		return err
+	} else {
+		return np.Create(constants.DefaultPodNetwork)
+	}
+}
+
 func bootstrapOnce(cfg Config) (assets string, err error) {
 
 	defer CleanUp(cfg, true, false)
@@ -141,6 +154,9 @@ func bootstrapOnce(cfg Config) (assets string, err error) {
 		return "", err
 	}
 	if err = kubeadm.Addons(cfg.KubeadmCfg); err != nil {
+		return "", err
+	}
+	if err = InstallNetwork(cfg.NetworkProvider); err != nil {
 		return "", err
 	}
 	return assets, nil

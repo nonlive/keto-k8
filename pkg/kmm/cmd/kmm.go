@@ -83,6 +83,7 @@ func init() {
 		"etcd-cluster-hostnames",
 		getDefaultFromEnvs([]string{"KMM_ETCD_CLUSTER_HOSTNAMES"}, ""),
 		"ETCD hostnames (defaults: KMM_ETCD_CLUSTER_HOSTNAMES or parsed from ETCD_INITIAL_CLUSTER)")
+	RootCmd.PersistentFlags().String("network-provider", "flannel", "Network Provider (flannel / weave)")
 }
 
 // Will return a valid Kmm.Config object for the relevant flags...
@@ -117,6 +118,7 @@ func getKmmConfig(cmd *cobra.Command) (cfg kmm.Config, err error) {
 		KubeadmCfg: kubeadmConfig,
 		KubePersistentCaCert:	cmd.Flag("kube-ca-cert").Value.String(),
 		KubePersistentCaKey:	cmd.Flag("kube-ca-key").Value.String(),
+		NetworkProvider:		cmd.Flag("network-provider").Value.String(),
 	}
 
 	if len(cfg.KubePersistentCaCert) < 1 {
