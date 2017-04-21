@@ -38,6 +38,7 @@ type Config struct {
 	KubeletId			string
 	CloudProvider		string
 	KubeVersion			string
+	MasterCount			uint
 }
 
 type SharedAssets struct {

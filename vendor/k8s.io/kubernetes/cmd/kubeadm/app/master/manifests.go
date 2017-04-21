@@ -61,7 +61,7 @@ Changes required - to be reviewed but hacked in to be compatible with working us
 
 // WriteStaticPodManifests builds manifest objects based on user provided configuration and then dumps it to disk
 // where kubelet will pick and schedule them.
-func WriteStaticPodManifests(cfg *kubeadmapi.MasterConfiguration) error {
+func WriteStaticPodManifests(cfg *kubeadmapi.MasterConfiguration, masterCount uint) error {
 	volumes := []api.Volume{k8sVolume(cfg)}
 	volumeMounts := []api.VolumeMount{k8sVolumeMount()}
 
@@ -88,7 +88,7 @@ func WriteStaticPodManifests(cfg *kubeadmapi.MasterConfiguration) error {
 		kubeAPIServer: componentPod(api.Container{
 			Name:          kubeAPIServer,
 			Image:         images.GetCoreImage(images.KubeAPIServerImage, cfg, kubeadmapi.GlobalEnvParams.HyperkubeImage),
-			Command:       getAPIServerCommand(cfg, false),
+			Command:       append(getAPIServerCommand(cfg, false), fmt.Sprintf("--apiserver-count=%d", masterCount)),
 			VolumeMounts:  apiVolumeMounts,
 			LivenessProbe: componentProbe(int(cfg.API.BindPort), "/healthz", api.URISchemeHTTPS),
 			Resources:     componentResources("250m"),

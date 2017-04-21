@@ -48,11 +48,22 @@ func init() {
 		"etcd-local-hostnames",
 		getDefaultFromEnvs([]string{"KMM_ETCD_LOCAL_HOSTNAMES"}, ""),
 		"ETCD hostnames (defaults: KMM_ETCD_LOCAL_HOSTNAMES or parsed from ETCD_ADVERTISE_CLIENT_URLS)")
-	EtcdCertsCmd.Flags().String(
-		"etcd-cluster-hostnames",
-		getDefaultFromEnvs([]string{"KMM_ETCD_CLUSTER_HOSTNAMES"}, ""),
-		"ETCD hostnames (defaults: KMM_ETCD_CLUSTER_HOSTNAMES or parsed from ETCD_INITIAL_CLUSTER)")
 	RootCmd.AddCommand(EtcdCertsCmd)
+}
+
+func GetEtcdHostNames(cmd *cobra.Command, minimalDefaultHosts []string) ([]string, error) {
+	var err error
+	etcdClusterHostnames := strings.Split(cmd.Flag("etcd-cluster-hostnames").Value.String(), ",")
+	if len(etcdClusterHostnames) - 1 == 0 {
+		var etcdClusterUrls string
+		if etcdClusterUrls, err = GetUrlsFromInitialClusterString(os.Getenv("ETCD_INITIAL_CLUSTER")); err != nil {
+			return []string{}, err
+		}
+		if etcdClusterHostnames, err = GetHostNamesFromUrls(etcdClusterUrls, minimalDefaultHosts); err != nil {
+			return []string{}, err
+		}
+	}
+	return etcdClusterHostnames, nil
 }
 
 // Must validate flags and return valid configuration
@@ -67,19 +78,10 @@ func getConfig(cmd *cobra.Command) (etcd.ServerConfig, error) {
 			return cfg, err
 		}
 	}
-	etcdClusterHostnames := strings.Split(cmd.Flag("etcd-cluster-hostnames").Value.String(), ",")
-	if len(etcdClusterHostnames) -1 == 0 {
-		var etcdClusterUrls string
-		if etcdClusterUrls, err = GetUrlsFromInitialClusterString(os.Getenv("ETCD_INITIAL_CLUSTER")); err != nil {
-			return cfg, err
-		} else {
-			if etcdClusterHostnames, err = GetHostNamesFromUrls(etcdClusterUrls, minimalDefaultHosts);
-			err != nil {
-				return cfg, err
-			}
-		}
+	var etcdClusterHostnames []string
+	if etcdClusterHostnames, err = GetEtcdHostNames(cmd, minimalDefaultHosts); err != nil {
+		return cfg, err
 	}
-
 	clientCfg, err := getEtcdClientConfig(cmd)
 	if err != nil {
 		return cfg, err
