@@ -12,11 +12,14 @@ import (
 	"net/url"
 
 	certutil "github.com/UKHomeOffice/keto-k8/pkg/client-go/util/cert"
+	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm/pkiutil"
 	"github.com/UKHomeOffice/keto-k8/pkg/etcd"
+	"github.com/UKHomeOffice/keto-k8/pkg/constants"
+	"strconv"
 )
 
 const CmdKubeadm string = "kubeadm"
@@ -152,6 +155,48 @@ func CreateKubeConfig(cfg Config) (err error) {
 		return err
 	}
 	return nil
+}
+
+// TODO: This is a hack until we can use kubeadm cmd directly...
+func GetKubeadmCfg(kmmCfg Config) (*kubeadmapi.MasterConfiguration, error) {
+	var cfg = &kubeadmapi.MasterConfiguration{}
+	port := kmmCfg.ApiServer.Port()
+	if port == "" {
+		cfg.API.BindPort = 6443
+	} else {
+		// Parse the port
+		var i64 int64
+		var err error
+		if i64, err = strconv.ParseInt(port, 10, 32); err != nil {
+			return cfg, err
+		}
+		cfg.API.BindPort = int32(i64)
+	}
+	var apiHost string
+	var err error
+	if apiHost, _, err = net.SplitHostPort(kmmCfg.ApiServer.Host) ; err != nil {
+		return cfg, err
+	}
+	cfg.API.AdvertiseAddress = apiHost
+
+	if len(kmmCfg.EtcdClientConfig.Endpoints) > 0 {
+		cfg.Etcd.Endpoints = strings.Split(kmmCfg.EtcdClientConfig.Endpoints, ",")
+		cfg.Etcd.CAFile = kmmCfg.EtcdClientConfig.CaFileName
+		cfg.Etcd.CertFile = kmmCfg.EtcdClientConfig.ClientCertFileName
+		cfg.Etcd.KeyFile = kmmCfg.EtcdClientConfig.ClientKeyFileName
+	}
+
+	if kmmCfg.KubeVersion != "" {
+		cfg.KubernetesVersion = kmmCfg.KubeVersion
+	}
+	cfg.CertificatesDir = kubeadmconstants.KubernetesDir + "/pki"
+	cfg.Networking.DNSDomain = constants.DefaultServiceDNSDomain
+
+	// TODO: Set dynamically depending on network to be used...
+	cfg.Networking.ServiceSubnet = constants.DefaultServicesSubnet
+	cfg.Networking.PodSubnet = constants.DefaultPodNetwork
+
+	return cfg, nil
 }
 
 // Run kubeadm to create a kubeconfig file...
