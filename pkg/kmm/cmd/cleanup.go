@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"os"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/UKHomeOffice/keto-k8/pkg/kmm"
 	"github.com/spf13/cobra"
 )
 
-// versionCmd represents the version command
+// cleanupCmd represents the version command
 var cleanupCmd = &cobra.Command{
 	Use:   "cleanup",
 	Short: "cleanup",
@@ -25,7 +23,6 @@ func cleanUp(c *cobra.Command) {
 	}
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(-1)
 	}
 }
 

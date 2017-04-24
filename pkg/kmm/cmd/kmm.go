@@ -106,9 +106,9 @@ func getKmmConfig(cmd *cobra.Command) (cfg kmm.Config, err error) {
 		return cfg, err
 	}
 	kubeadmConfig := kubeadm.Config{
-		ApiServer:			url,
+		APIServer:			url,
 		KubeVersion:		cmd.Flag("kube-version").Value.String(),
-		KubeletId:			cmd.Flag("kube-kubeletid").Value.String(),
+		KubeletID:			cmd.Flag("kube-kubeletid").Value.String(),
 		CloudProvider:		cmd.Flag("cloud-provider").Value.String(),
 		EtcdClientConfig: 	etcdConfig,
 		MasterCount:		uint(len(masterHosts)),

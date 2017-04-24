@@ -27,11 +27,13 @@ import (
 	certutil "k8s.io/client-go/util/cert"
 )
 
+// KeyPair - Private RSA key and associated public x509 cert
 type KeyPair struct {
 	Key  *rsa.PrivateKey
 	Cert *x509.Certificate
 }
 
+// NewCA - Return's a new CA
 func NewCA(name string) (*KeyPair, error) {
 	key, err := certutil.NewPrivateKey()
 	if err != nil {
@@ -53,6 +55,7 @@ func NewCA(name string) (*KeyPair, error) {
 	}, nil
 }
 
+// NewServerKeyPair returns a new keypair for a CA
 func NewServerKeyPair(ca *KeyPair, commonName, svcName, svcNamespace, dnsDomain string, ips, hostnames []string) (*KeyPair, error) {
 	key, err := certutil.NewPrivateKey()
 	if err != nil {
@@ -93,6 +96,7 @@ func NewServerKeyPair(ca *KeyPair, commonName, svcName, svcNamespace, dnsDomain 
 	}, nil
 }
 
+// NewClientKeyPair creates a new keypair signed off a CA
 func NewClientKeyPair(ca *KeyPair, commonName string, organizations []string) (*KeyPair, error) {
 	key, err := certutil.NewPrivateKey()
 	if err != nil {

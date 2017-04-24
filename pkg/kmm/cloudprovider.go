@@ -10,12 +10,13 @@ import (
 	"github.com/UKHomeOffice/keto/pkg/cloudprovider"
 )
 
-type CloudAsset struct {
+type cloudAsset struct {
 	FileName	string
 	Value		[]byte
 	Mode		os.FileMode
 }
 
+// SaveCloudAssets will get assets from cloud provider and save onto disk at known locations
 func SaveCloudAssets(cloudprovider, etcdCa, etcdCaKey, kubeCa, kubeCaKey string) (error) {
 	node, err := getNodeInterface(cloudprovider)
 	if err != nil {
@@ -25,23 +26,23 @@ func SaveCloudAssets(cloudprovider, etcdCa, etcdCaKey, kubeCa, kubeCaKey string)
 	if err != nil {
 		return err
 	}
-	var files = []CloudAsset{
-		CloudAsset{
+	var files = []cloudAsset{
+		cloudAsset{
 			FileName:	etcdCa,
 			Value:		assets.EtcdCACert,
 			Mode:		0644,
 		},
-		CloudAsset{
+		cloudAsset{
 			FileName:	etcdCaKey,
 			Value:		assets.EtcdCAKey,
 			Mode:		0640,
 		},
-		CloudAsset{
+		cloudAsset{
 			FileName:	kubeCa,
 			Value:		assets.KubeCACert,
 			Mode:		0644,
 		},
-		CloudAsset{
+		cloudAsset{
 			FileName:	kubeCaKey,
 			Value:		assets.KubeCAKey,
 			Mode:		0640,

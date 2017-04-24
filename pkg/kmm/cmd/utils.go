@@ -11,6 +11,7 @@ import (
 	"github.com/UKHomeOffice/keto-k8/pkg/etcd"
 )
 
+// EtcdCertsCmdName the command name to use to invoke kmm for generating etcd certs
 const EtcdCertsCmdName string = "etcdcerts"
 
 // Will validate flags and exit if invalid...
@@ -46,7 +47,7 @@ func getEtcdClientConfig(cmd *cobra.Command) (cfg etcd.ClientConfig, err error) 
 	return etcdConfig, nil
 }
 
-// Should return a , separated list of urls
+// GetUrlsFromInitialClusterString - Should return a , separated list of urls
 func GetUrlsFromInitialClusterString(initialCluster string) (string, error) {
 	clusterValues := deleteEmpty(strings.Split(initialCluster, ","))
 	urls := make([]string, len(clusterValues))
@@ -62,12 +63,13 @@ func GetUrlsFromInitialClusterString(initialCluster string) (string, error) {
 	return strings.Join(urls[:],","), nil
 }
 
+// GetHostNamesFromEnvUrls - Will get host names from an environment variable and some defaults
 func GetHostNamesFromEnvUrls(envName string, minimalDefault []string) ([]string, error) {
 	urls := os.Getenv(envName)
 	return GetHostNamesFromUrls(urls, minimalDefault)
 }
 
-// Will parse host-names and adding specified additional extra minimal names...
+// GetHostNamesFromUrls - Will parse host-names and adding specified additional extra minimal names...
 func GetHostNamesFromUrls(urls string, minimalDefault []string) ([]string, error) {
 	urlsa := deleteEmpty(strings.Split(urls, ","))
 	hosts := make([]string, len(urlsa))

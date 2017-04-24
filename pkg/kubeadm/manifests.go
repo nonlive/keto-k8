@@ -5,6 +5,7 @@ import (
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 )
 
+// WriteManifests - will save kubernetes master manifests from kmm config struct
 func WriteManifests(kubeadmCfg Config) (err error) {
 	// Get config into kubeadm format
 	var cfg *kubeadmapi.MasterConfiguration

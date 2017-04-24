@@ -16,9 +16,10 @@ import (
 	"github.com/UKHomeOffice/keto/pkg/cloudprovider"
 )
 
-const AssetKey string = "kmm-asset-key"
-const AssetLockKey string = "kmm-asset-lock"
+const assetKey string = "kmm-asset-key"
+const assetLockKey string = "kmm-asset-lock"
 
+// Config - the complete configuration provided for all kmm use
 type Config struct {
 	KubeadmCfg           kubeadm.Config
 
@@ -35,12 +36,7 @@ type Config struct {
 	NetworkProvider		string
 }
 
-type KmmAssets struct {
-	Value string
-	Owner string
-	CreatedAt time.Time
-}
-
+// Manifests - Will generate static manefest files
 func Manifests(cfg kubeadm.Config) (err error) {
 	if err = kubeadm.WriteManifests(cfg); err != nil {
 		return err
@@ -48,7 +44,7 @@ func Manifests(cfg kubeadm.Config) (err error) {
 	return nil
 }
 
-// kmm core logic
+// GetAssets - kmm core logic
 func GetAssets(cfg Config) (err error) {
 
 	if err = updateCloudCfg(&cfg) ; err != nil {
@@ -66,11 +62,11 @@ func GetAssets(cfg Config) (err error) {
 
 	// Keep trying to get Assets
 	for assets == "" {
-		assets, err = etcd.Get(cfg.KubeadmCfg.EtcdClientConfig, AssetKey)
+		assets, err = etcd.Get(cfg.KubeadmCfg.EtcdClientConfig, assetKey)
 		if err == etcd.ErrKeyMissing {
 			log.Printf("Assets not present in etcd...\n")
 			// obtain lock...
-			mylock, err := etcd.GetLock(cfg.KubeadmCfg.EtcdClientConfig, AssetLockKey)
+			mylock, err := etcd.GetLock(cfg.KubeadmCfg.EtcdClientConfig, assetLockKey)
 			if err != nil {
 				// May need to add retry logic?
 				return err
@@ -79,12 +75,11 @@ func GetAssets(cfg Config) (err error) {
 				log.Printf("Obtained lock, creating assets...")
 				if assets, err = bootstrapOnce(cfg); err != nil {
 					return err
-				} else {
-					bootStrappedHere = true
-					// Only share assets when all done OK!
-					if err = etcd.PutTx(cfg.KubeadmCfg.EtcdClientConfig, AssetKey, assets) ; err != nil {
-						return err
-					}
+				}
+				bootStrappedHere = true
+				// Only share assets when all done OK!
+				if err = etcd.PutTx(cfg.KubeadmCfg.EtcdClientConfig, assetKey, assets) ; err != nil {
+					return err
 				}
 			} else {
 				// We need to try and get the assets again after a back off
@@ -112,30 +107,32 @@ func GetAssets(cfg Config) (err error) {
 	return nil
 }
 
+// CleanUp - will optionally clean all etcd resources
 func CleanUp(cfg Config, releaseLock bool, deleteAssets bool) (err error) {
 
 	if releaseLock {
 		log.Printf("Releasing lock...")
-		if err = etcd.Delete(cfg.KubeadmCfg.EtcdClientConfig, AssetLockKey); err != nil {
+		if err = etcd.Delete(cfg.KubeadmCfg.EtcdClientConfig, assetLockKey); err != nil {
 			return err
 		}
 		log.Printf("Released lock")
 	}
 	if deleteAssets {
 		log.Printf("Releasing assets...")
-		if err = etcd.Delete(cfg.KubeadmCfg.EtcdClientConfig, AssetKey); err != nil {
+		if err = etcd.Delete(cfg.KubeadmCfg.EtcdClientConfig, assetKey); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func InstallNetwork(networkProvider string) (error) {
-	if np, err := network.CreateNetworkProvider(networkProvider); err != nil {
+// InstallNetwork - Creates the network resources
+func InstallNetwork(networkProvider string) (err error) {
+	var np network.Provider
+	if np, err = network.CreateProvider(networkProvider); err != nil {
 		return err
-	} else {
-		return np.Create(constants.DefaultPodNetwork)
 	}
+	return np.Create(constants.DefaultPodNetwork)
 }
 
 func bootstrapOnce(cfg Config) (assets string, err error) {
@@ -202,20 +199,18 @@ func updateCloudCfg(cfg *Config) (err error) {
 		url, err := url.Parse(api + ":6443")
 		if err != nil {
 			return fmt.Errorf("Error parsing Api server %s [%v]", api, err)
+		}
+		if len(api) > 0 {
+			cfg.KubeadmCfg.APIServer = url
 		} else {
-			if len(api) > 0 {
-				cfg.KubeadmCfg.ApiServer = url
-			} else {
-				// url.Parse seems to always parse without error!
-				return fmt.Errorf("Empty API server [%s] obtained from cloud provider", api)
-			}
+			// url.Parse seems to always parse without error!
+			return fmt.Errorf("Empty API server [%s] obtained from cloud provider", api)
 		}
 		if cfg.KubeadmCfg.KubeVersion, err = node.GetKubeVersion(); err != nil {
 			return fmt.Errorf("Kubernetes version not specified from cloud provider [%v]", err)
-		} else {
-			if len(cfg.KubeadmCfg.KubeVersion) == 0 {
-				return fmt.Errorf("Error parsing Api server %s", api)
-			}
+		}
+		if len(cfg.KubeadmCfg.KubeVersion) == 0 {
+			return fmt.Errorf("Error parsing Api server %s", api)
 		}
 	}
 

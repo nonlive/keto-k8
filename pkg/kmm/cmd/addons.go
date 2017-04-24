@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"os"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm"
 )
 
-// versionCmd represents the version command
+// AddonsCmd represents the addons command
 var AddonsCmd = &cobra.Command{
 	Use:   "addons",
 	Short: "Will deploy cluster resources",
@@ -20,7 +18,6 @@ var AddonsCmd = &cobra.Command{
 		}
 		if err != nil {
 			log.Fatal(err)
-			os.Exit(-1)
 		}
 	},
 }

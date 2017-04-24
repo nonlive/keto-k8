@@ -1,47 +1,51 @@
 package network
 
 import (
-	"github.com/UKHomeOffice/keto-k8/pkg/k8client"
-	log "github.com/Sirupsen/logrus"
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/UKHomeOffice/keto-k8/pkg/k8client"
+	log "github.com/Sirupsen/logrus"
 )
 
-// NetworkProvider is an abstract interface for Network.
-type NetworkProvider interface {
+// Provider is an abstract interface for Network.
+type Provider interface {
 	Name() string
 	Create(podNetworkCidr string) error
 }
 
-type NetworkProviderFactory func() (NetworkProvider)
+// ProviderFactory - Interface definition for a network.provider implementation
+type ProviderFactory func() (Provider)
 
-var NetworkFactories = make(map[string]NetworkProviderFactory)
+// Factories - a map of provider creation factory implementations stored by name
+var Factories = make(map[string]ProviderFactory)
 
-func Register(factory NetworkProviderFactory) {
+// Register - will register a new network.Provider
+func Register(factory ProviderFactory) {
 
 	if factory == nil {
 		log.Panicf("NetworkProvider factory does not exist.")
 	}
 	name := factory().Name()
-	_, registered := NetworkFactories[name]
+	_, registered := Factories[name]
 	if registered {
 		log.Errorf("Datastore factory %s already registered. Ignoring.", name)
 	}
-	NetworkFactories[name] = factory
+	Factories[name] = factory
 }
 
-func CreateNetworkProvider(networkProvider string) (NetworkProvider, error) {
-	networkProviderFactory, ok := NetworkFactories[networkProvider]
+// CreateProvider - will return a network.Provider implementation from a name
+func CreateProvider(networkProvider string) (Provider, error) {
+	networkProviderFactory, ok := Factories[networkProvider]
 	if !ok {
 		// Factory has not been registered.
 		// Make a list of all available datastore factories for logging.
-		availableProviders := make([]string, len(NetworkFactories))
-		for k, _ := range NetworkFactories {
+		availableProviders := make([]string, len(Factories))
+		for k := range Factories {
 			availableProviders = append(availableProviders, k)
 		}
-		return nil, errors.New(
-			fmt.Sprintf("Invalid NetworkProvider name. Must be one of: %s", strings.Join(availableProviders, ", ")))
+		return nil,
+			fmt.Errorf("Invalid NetworkProvider name. Must be one of: %s", strings.Join(availableProviders, ", "))
 	}
 	return networkProviderFactory(), nil
 }

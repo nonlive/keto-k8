@@ -5,16 +5,20 @@ import (
 	"text/template"
 )
 
+// FlannelNetworkProvider - a struct to represent the concrete implementation of a Flannel NetworkProvider
 type FlannelNetworkProvider struct {}
 
-func NewFlannelNetworkProvider() (NetworkProvider) {
+// NewFlannelNetworkProvider - a factory method to initialise and return a Flannel specific NetworkProvider
+func NewFlannelNetworkProvider() (Provider) {
 	return &FlannelNetworkProvider{}
 }
 
+// Name - will return the Flannel NetworkProvider name
 func (fnp *FlannelNetworkProvider) Name() string {
 	return "flannel"
 }
 
+// Create - will create the K8 network resources
 func (fnp *FlannelNetworkProvider) Create(podNetworkCidr string) (error) {
 	k8Definition, err := flannel(podNetworkCidr)
 	if err != nil {

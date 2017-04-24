@@ -5,16 +5,20 @@ import (
   "text/template"
 )
 
+// WeaveNetworkProvider  - a struct to represent the concrete implementation of a Weave network.Provider
 type WeaveNetworkProvider struct {}
 
-func NewWeaveNetworkProvider() (NetworkProvider) {
+// NewWeaveNetworkProvider - a factory method to initialise and return a Weave specific network.Provider
+func NewWeaveNetworkProvider() (Provider) {
   return &WeaveNetworkProvider{}
 }
 
+// Name - will return the Weave NetworkProvider name
 func (fnp *WeaveNetworkProvider) Name() string {
   return "weave"
 }
 
+// Create - will create the K8 network resources (Weave)
 func (fnp *WeaveNetworkProvider) Create(podNetworkCidr string) (error) {
 
   // TODO: Ensure weave uses the API configured pod network else we have to rethink this interface...
