@@ -103,6 +103,9 @@ func GetAssets(cfg Config) (err error) {
 		if err = kubeadm.CreateKubeConfig(cfg.KubeadmCfg) ; err != nil {
 			return err
 		}
+		if kubeadm.UpdateMasterRoleLabelsAndTaints(cfg.KubeadmCfg); err != nil {
+			return err
+		}
 	}
 	return nil
 }
