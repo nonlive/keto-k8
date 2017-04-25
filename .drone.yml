@@ -1,0 +1,23 @@
+---
+workspace:
+  base: /go
+  path: src/github.com/${DRONE_REPO}
+
+pipeline:
+  test:
+    image: golang:1.8
+    commands:
+      - mkdir -p /go/bin
+      - "curl -s https://glide.sh/get | sh"
+      - glide install
+      # We have some patched files to use this successfully - until PR's in
+      - git checkout vendor/k8s.io/kubernetes/cmd/kubeadm
+      - go vet $(go list ./... | grep -v /vendor)
+      - go test -cover $(go list ./... | grep -v /vendor)
+      - go build $(go list ./... | grep -v /vendor)
+
+matrix:
+  GO_VERSION:
+    - latest
+    - "1.8"
+    - "1.7"
