@@ -13,6 +13,7 @@ import (
 	"github.com/UKHomeOffice/keto-k8/pkg/fileutil"
 )
 
+// ServerConfig - Params for configuring an etcd cluster
 type ServerConfig struct {
 	CaKeyFileName		string
 	ServerCertFileName	string
@@ -24,7 +25,7 @@ type ServerConfig struct {
 	ClientConfig		ClientConfig
 }
 
-// ExtKeyUsage contains a mapping of string names to extended key
+// ExtKeyUsage - contains a mapping of string names to extended key
 // usages.
 var ExtKeyUsage = map[string]x509.ExtKeyUsage{
 	"any":              x509.ExtKeyUsageAny,
@@ -42,12 +43,7 @@ var ExtKeyUsage = map[string]x509.ExtKeyUsage{
 	"netscape sgc":     x509.ExtKeyUsageNetscapeServerGatedCrypto,
 }
 
-/*
-Missing fields when generating client certs:
-            X509v3 Subject Key Identifier:
-                BE:AE:DD:86:6F:79:48:9A:33:CE:4D:C0:07:D3:5E:FF:70:02:BB:78
- */
-
+// GenCerts - Will generate etcd server and client certs from appropriate CA and key
 func GenCerts(cfg ServerConfig) (err error) {
 
 	var caCert *x509.Certificate
@@ -70,9 +66,9 @@ func GenCerts(cfg ServerConfig) (err error) {
 		if err != nil || caKey == nil {
 			return fmt.Errorf("CA key existed but could not be loaded properly %q", cfg.CaKeyFileName)
 		}
-		log.Printf("Found and verified CA certificate %q and key %q.", cfg.ClientConfig.CaFileName, cfg.CaKeyFileName)
+		log.Printf("Found and verified CA certificate %q and key %q", cfg.ClientConfig.CaFileName, cfg.CaKeyFileName)
 	} else {
-		return fmt.Errorf("ETCD CA key %q and cert %q must both exist before certs can be created.", cfg.CaKeyFileName, cfg.ClientConfig.CaFileName)
+		return fmt.Errorf("etcd CA key %q and cert %q must both exist before certs can be created", cfg.CaKeyFileName, cfg.ClientConfig.CaFileName)
 	}
 
 	// Generate the ETCD server cert and key file (if required)

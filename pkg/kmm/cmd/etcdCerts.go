@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// versionCmd represents the version command
+// EtcdCertsCmd represents the command for generating etcd certs
 var EtcdCertsCmd = &cobra.Command{
 	Use:   EtcdCertsCmdName,
 	Short: "Will generate etcd certs",
@@ -51,6 +51,7 @@ func init() {
 	RootCmd.AddCommand(EtcdCertsCmd)
 }
 
+// GetEtcdHostNames will get the hosts names from command flags and environment variables and a minimal defaults
 func GetEtcdHostNames(cmd *cobra.Command, minimalDefaultHosts []string) ([]string, error) {
 	var err error
 	etcdClusterHostnames := strings.Split(cmd.Flag("etcd-cluster-hostnames").Value.String(), ",")

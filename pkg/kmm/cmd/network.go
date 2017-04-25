@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"os"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/UKHomeOffice/keto-k8/pkg/kmm"
 	"github.com/spf13/cobra"

@@ -22,28 +22,35 @@ import (
 	"strconv"
 )
 
-const CmdKubeadm string = "kubeadm"
+const cmdKubeadm string = "kubeadm"
 
 var (
-	CmdOptsCerts 		= []string {"alpha", "phase", "certs", "selfsign", "--cert-altnames"}
-	CmdOptsKubeconfig 	= []string {"alpha", "phase", "kubeconfig", "client-certs"}
+	cmdOptsCerts = []string {"alpha", "phase", "certs", "selfsign", "--cert-altnames"}
+	cmdOptsKubeconfig = []string {"alpha", "phase", "kubeconfig", "client-certs"}
+
+	// PkiDir - The directory kubeadm will store all pki assets
 	PkiDir string 		= kubeadmconstants.KubernetesDir + "/pki"
+
+	// CaCertFile the name of the Kube CA cert file (as used by kubeadm)
 	CaCertFile string	= kubeadmconstants.KubernetesDir + "/pki" + "/" + kubeadmconstants.CACertAndKeyBaseName + ".crt"
+
+	// CaKeyFile the file name of Kube CA key file (as used by kubeadm)
 	CaKeyFile string 	= kubeadmconstants.KubernetesDir + "/pki" + "/" + kubeadmconstants.CACertAndKeyBaseName + ".key"
 )
 
-// represents runtime params cfg structure.
+// Config  represents runtime params cfg structure.
 type Config struct {
-	EtcdClientConfig	etcd.ClientConfig
-	CaCert				string
-	CaKey				string
-	ApiServer			*url.URL
-	KubeletId			string
-	CloudProvider		string
-	KubeVersion			string
-	MasterCount			uint
+	EtcdClientConfig etcd.ClientConfig
+	CaCert           string
+	CaKey            string
+	APIServer        *url.URL
+	KubeletID        string
+	CloudProvider    string
+	KubeVersion      string
+	MasterCount      uint
 }
 
+// SharedAssets - the data to be shared between all kubernetes masters
 type SharedAssets struct {
 	FrontProxyCa	string
 	FrontProxyCaKey	string
@@ -51,7 +58,7 @@ type SharedAssets struct {
 	SaKey			string
 }
 
-// Must grab any assets off disk
+// GetAssets - For getting assets off disk
 // Return an error if there are no assets (and empty string)
 func GetAssets(cfg Config) (assets string, err error) {
 	assets = ""
@@ -95,6 +102,7 @@ func GetAssets(cfg Config) (assets string, err error) {
 	return assets, nil
 }
 
+// SaveAssets - will persist assets to disk
 func SaveAssets(cfg Config, assets string) (err error) {
 	pkiDir := PkiDir + "/"
 	sharedAssets := SharedAssets{}
@@ -121,19 +129,20 @@ func SaveAssets(cfg Config, assets string) (err error) {
 	return nil
 }
 
-// Create all PKI assests on disk
+// CreatePKI - generates all PKI assests on to disk
 func CreatePKI(cfg Config) (err error) {
 	var apiHost string
-	if apiHost, _, err = net.SplitHostPort(cfg.ApiServer.Host) ; err != nil {
+	if apiHost, _, err = net.SplitHostPort(cfg.APIServer.Host) ; err != nil {
 		return err
 	}
 	log.Printf("Using host:%q", apiHost)
-	args := append(CmdOptsCerts, apiHost)
+	args := append(cmdOptsCerts, apiHost)
 	kubeadmOut, err := runKubeadm(cfg, args)
 	log.Printf("Output:\n" + kubeadmOut)
 	return err
 }
 
+// CreateKubeConfig - Creates all the kubeconfig files requires for masters
 func CreateKubeConfig(cfg Config) (err error) {
 	if err = createAKubeCfg(cfg, kubeadmconstants.AdminKubeConfigFileName,
 		"kubernetes-admin", kubeadmconstants.MastersGroup); err != nil {
@@ -141,7 +150,7 @@ func CreateKubeConfig(cfg Config) (err error) {
 		return err
 	}
 	if err = createAKubeCfg(cfg, kubeadmconstants.KubeletKubeConfigFileName,
-		"system:node:" + cfg.KubeletId, kubeadmconstants.NodesGroup); err != nil {
+		"system:node:" + cfg.KubeletID, kubeadmconstants.NodesGroup); err != nil {
 
 		return err
 	}
@@ -157,10 +166,11 @@ func CreateKubeConfig(cfg Config) (err error) {
 	return nil
 }
 
+// GetKubeadmCfg - will transfer config from kmm to a config struct as used by kubeadm internaly
 // TODO: This is a hack until we can use kubeadm cmd directly...
 func GetKubeadmCfg(kmmCfg Config) (*kubeadmapi.MasterConfiguration, error) {
 	var cfg = &kubeadmapi.MasterConfiguration{}
-	port := kmmCfg.ApiServer.Port()
+	port := kmmCfg.APIServer.Port()
 	if port == "" {
 		cfg.API.BindPort = 6443
 	} else {
@@ -174,7 +184,7 @@ func GetKubeadmCfg(kmmCfg Config) (*kubeadmapi.MasterConfiguration, error) {
 	}
 	var apiHost string
 	var err error
-	if apiHost, _, err = net.SplitHostPort(kmmCfg.ApiServer.Host) ; err != nil {
+	if apiHost, _, err = net.SplitHostPort(kmmCfg.APIServer.Host) ; err != nil {
 		return cfg, err
 	}
 	cfg.API.AdvertiseAddress = apiHost
@@ -201,9 +211,9 @@ func GetKubeadmCfg(kmmCfg Config) (*kubeadmapi.MasterConfiguration, error) {
 
 // Run kubeadm to create a kubeconfig file...
 func createAKubeCfg(cfg Config, file string, cn string, org string) (err error) {
-	args := append(CmdOptsKubeconfig,
+	args := append(cmdOptsKubeconfig,
 		"--client-name", cn,
-		"--server", cfg.ApiServer.String())
+		"--server", cfg.APIServer.String())
 
 	if len(org) > 0 {
 		args = append(args,
@@ -223,7 +233,7 @@ func createAKubeCfg(cfg Config, file string, cn string, org string) (err error) 
 func runKubeadm(cfg Config, cmdArgs []string) (out string, err error) {
 	var cmdOut []byte
 
-	cmdName := CmdKubeadm
+	cmdName := cmdKubeadm
 	log.Printf("Running:%v %v", cmdName, strings.Join(cmdArgs, " "))
 	if cmdOut, err = exec.Command(cmdName, cmdArgs...).CombinedOutput(); err != nil {
 		return string(cmdOut[:]), err

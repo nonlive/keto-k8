@@ -41,12 +41,12 @@ func CopyFile(src, dst string) (err error) {
     return
 }
 
+// ExistFile - Tests if a file exists
 func ExistFile(file string) (bool) {
 	if _, err := os.Stat(file); err == nil {
 		return true
-	} else {
-		return false
 	}
+    return false
 }
 
 // SymlinkFile creates link (ln) to a file (tgt). If tgt and ln files exist, and are
@@ -86,12 +86,11 @@ func SymlinkFile(tgt, ln string) (err error) {
             if existingLink == tgt {
                 // No change required or err
                 return nil
-            } else {
-                // Replace link
-                err = os.Remove(ln)
-                if err != nil {
-                    return err
-                }
+            }
+            // Replace link
+            err = os.Remove(ln)
+            if err != nil {
+                return err
             }
         } else {
             return fmt.Errorf("SymlinkFile: not replacing existing (non-symlink) file %s", ln)

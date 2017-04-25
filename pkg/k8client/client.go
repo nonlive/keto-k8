@@ -8,10 +8,10 @@ import (
 
 )
 
-const CmdKubectl string = "kubectl"
+const cmdKubectl string = "kubectl"
 
+// Create - Will take a yaml string and deploy it to the API...
 // TODO: Use API (sort out build issues with client lib and kubeadm)
-// Will take a yaml string and deploy it to the API...
 func Create(resource string) (error) {
 	var args = []string {
 		"create",
@@ -29,7 +29,7 @@ func Create(resource string) (error) {
 func runKubectl(cmdArgs []string, stdIn string) (out string, err error) {
 	var cmdOut []byte
 
-	cmdName := CmdKubectl
+	cmdName := cmdKubectl
 	log.Printf("Running:%v %v", cmdName, strings.Join(cmdArgs, " "))
 	cmd := exec.Command(cmdName, cmdArgs...)
 	cmd.Stdin = strings.NewReader(stdIn)

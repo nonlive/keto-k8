@@ -13,7 +13,7 @@ import (
 
 // TODO: rewrite a client interface (for testability)
 
-// Config represents a controller configuration.
+// ClientConfig - represents a controller configuration.
 type ClientConfig struct {
 	Endpoints			string
 	CaFileName			string
@@ -22,11 +22,14 @@ type ClientConfig struct {
 }
 
 var (
+	// Timeout - For now a constant
 	Timeout = 5 * time.Second
+
+	// MaxTransactionTime - Also a constant - for now
 	MaxTransactionTime = 120 * time.Second
 )
 
-// Will return:
+// Get - Will return:
 // - The the string value for a given key if present
 // - Will return an err for all other occasions
 func Get(cfg ClientConfig, key string) (value string, err error) {
@@ -43,22 +46,21 @@ func Get(cfg ClientConfig, key string) (value string, err error) {
 	getresp, err := cli.Get(ctx, key)
 	if err != nil {
 		return "", err
-	} else {
-		if len(getresp.Kvs) == 0 {
-			return "", ErrKeyMissing
-		}
-		for _, ev := range getresp.Kvs {
-			log.Debugf("%q values: key: %q = %q, version=%q\n", key, ev.Key, ev.Value, ev.Version)
-			value = string(ev.Value[:])
-			break
-		}
+	}
+	if len(getresp.Kvs) == 0 {
+		return "", ErrKeyMissing
+	}
+	for _, ev := range getresp.Kvs {
+		log.Debugf("%q values: key: %q = %q, version=%q\n", key, ev.Key, ev.Value, ev.Version)
+		value = string(ev.Value[:])
+		break
 	}
 	//log.Printf("%q key has specific value: %q\n", key, value)
 	cancel() // context
 	return value, err
 }
 
-// Will obtain a lock (true) if the first client to create lock
+// GetLock - Will obtain a lock (true) if the first client to create lock
 // If TTL expired, will obtain lock (reset TTL)
 // If TTL not expired will return false
 func GetLock(cfg ClientConfig, key string) (mylock bool, err error) {
@@ -91,27 +93,26 @@ func setLock(cfg ClientConfig, key string) (err error) {
 // Returns true if lock obtained (re-created as TTL expired)
 // Returns falue if existing lock still valid
 func tryRecreateLock(cfg ClientConfig, key string) (recreated bool, err error) {
-	othersTtlString, err := Get(cfg, key)
+	othersTTLString, err := Get(cfg, key)
 	if err != nil {
 		// Shouldn't get this unless terminal...
 		log.Printf("Lock (key - %q) not obtained, Can't get key:%q", key, err)
 		return false, err
+	}
+	// We have old TTL - parse it
+	otherTTLTime, e := time.Parse(
+		time.RFC3339,
+		othersTTLString)
+	if e != nil {
+		// Error parsing lock, corrupt, overwrite and get lock
+		err = overWriteLock(cfg, key)
 	} else {
-		// We have old TTL - parse it
-		otherTtlTime, e := time.Parse(
-			time.RFC3339,
-			othersTtlString)
-		if e != nil {
-			// Error parsing lock, corrupt, overwrite and get lock
+		// See if TTL has passed and we should assume lock...
+		if time.Now().After(otherTTLTime) {
 			err = overWriteLock(cfg, key)
 		} else {
-			// See if TTL has passed and we should assume lock...
-			if time.Now().After(otherTtlTime) {
-				err = overWriteLock(cfg, key)
-			} else {
-				log.Printf("Lock (key - %q) not obtained, TTL exists:%q", key, othersTtlString)
-				return false, nil
-			}
+			log.Printf("Lock (key - %q) not obtained, TTL exists:%q", key, othersTTLString)
+			return false, nil
 		}
 	}
 	return false, err
@@ -129,6 +130,7 @@ func overWriteLock(cfg ClientConfig, key string) (err error) {
 	return err
 }
 
+// Delete - will remove a key from etcd
 func Delete(cfg ClientConfig, key string) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	cli, err := getEtcdClient(cfg, Timeout)
@@ -142,7 +144,7 @@ func Delete(cfg ClientConfig, key string) (err error) {
 	return err
 }
 
-// Puts with a transaction (will NOT create new revision)
+// PutTx - Puts with a transaction (will NOT create new revision)
 // Will ensure only a single version is ever stored.
 // Returns error if key already existed
 func PutTx(cfg ClientConfig, key string, value string) (err error) {
@@ -201,7 +203,6 @@ func getEtcdClient(config ClientConfig, timeout time.Duration) (cli *clientv3.Cl
 	cli, err = clientv3.New(cfg)
 	if err != nil {
 		return nil, err
-	} else {
-		return cli, nil
 	}
+	return cli, nil
 }

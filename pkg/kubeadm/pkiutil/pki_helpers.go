@@ -43,6 +43,7 @@ import (
 // TODO: It should be able to generate different types of private keys, at least: RSA and ECDSA (and in the future maybe Ed25519 as well)
 // TODO: See if it makes sense to move this package directly to pkg/util/cert
 
+// NewCertificateAuthority create a new CA
 func NewCertificateAuthority() (*x509.Certificate, *rsa.PrivateKey, error) {
 	key, err := certutil.NewPrivateKey()
 	if err != nil {
@@ -60,6 +61,7 @@ func NewCertificateAuthority() (*x509.Certificate, *rsa.PrivateKey, error) {
 	return cert, key, nil
 }
 
+// NewCertAndKey - new cert and key
 func NewCertAndKey(caCert *x509.Certificate, caKey *rsa.PrivateKey, config certutil.Config) (*x509.Certificate, *rsa.PrivateKey, error) {
 	key, err := certutil.NewPrivateKey()
 	if err != nil {
@@ -74,6 +76,7 @@ func NewCertAndKey(caCert *x509.Certificate, caKey *rsa.PrivateKey, config certu
 	return cert, key, nil
 }
 
+// WriteCertAndKey - save new key and cert to disk at pkiPath as name
 func WriteCertAndKey(pkiPath string, name string, cert *x509.Certificate, key *rsa.PrivateKey) error {
 	if err := WriteKey(pkiPath, name, key); err != nil {
 		return err
@@ -86,6 +89,7 @@ func WriteCertAndKey(pkiPath string, name string, cert *x509.Certificate, key *r
 	return nil
 }
 
+// WriteCert - writes a public cert as name at pkiPath
 func WriteCert(pkiPath, name string, cert *x509.Certificate) error {
 	if cert == nil {
 		return fmt.Errorf("certificate cannot be nil when writing to file")
@@ -99,6 +103,7 @@ func WriteCert(pkiPath, name string, cert *x509.Certificate) error {
 	return nil
 }
 
+// WriteKey - writes a private key as name at pkiPath
 func WriteKey(pkiPath, name string, key *rsa.PrivateKey) error {
 	if key == nil {
 		return fmt.Errorf("private key cannot be nil when writing to file")
@@ -112,6 +117,7 @@ func WriteKey(pkiPath, name string, key *rsa.PrivateKey) error {
 	return nil
 }
 
+// WritePublicKey - writes a public key as name at pkiPath
 func WritePublicKey(pkiPath, name string, key *rsa.PublicKey) error {
 	if key == nil {
 		return fmt.Errorf("public key cannot be nil when writing to file")
@@ -166,7 +172,7 @@ func TryLoadCertFromDisk(pkiPath, name string) (*x509.Certificate, error) {
 	return cert, err
 }
 
-// TryLoadCertAnyFromDisk tries to load the cert from the disk and validates that it is valid
+// TryLoadAnyCertFromDisk tries to load the cert from the disk and validates that it is valid
 func TryLoadAnyCertFromDisk(certificatePath string) (*x509.Certificate, error) {
 	certs, err := certutil.CertsFromFile(certificatePath)
 	if err != nil {
@@ -217,6 +223,7 @@ func TryLoadAnyKeyFromDisk(privateKeyPath string) (*rsa.PrivateKey, error) {
 	return key, nil
 }
 
+// TryLoadPublicKeyFromDisk - will verify a Public key and return it if OK
 func TryLoadPublicKeyFromDisk(pkiPath, name string) (*rsa.PublicKey, error) {
 	publicKeyPath := pathForPublicKey(pkiPath, name)
 
@@ -228,7 +235,7 @@ func TryLoadPublicKeyFromDisk(pkiPath, name string) (*rsa.PublicKey, error) {
 	pubkeyInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
 	pubkey, ok := pubkeyInterface.(*rsa.PublicKey)
 	if !ok {
-		return nil, fmt.Errorf("Error parsing public key %q.", publicKeyPath)
+		return nil, fmt.Errorf("Error parsing public key %q", publicKeyPath)
 	}
 	return pubkey, nil
 }

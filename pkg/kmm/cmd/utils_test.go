@@ -72,7 +72,7 @@ func testAString(initialString string, expectedString string, expectdNumber int)
 	urlsAry := strings.Split(urls, ",")
 	numUrls := len(urlsAry)
 	if numUrls != expectdNumber {
-		return fmt.Errorf("Expected %d URL's returned for string %q.", numUrls, urls)
+		return fmt.Errorf("Expected %d URL's returned for string %q", numUrls, urls)
 	}
 	for _, s := range urlsAry {
 		_, err := url.Parse(s)

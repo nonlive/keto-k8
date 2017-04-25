@@ -10,6 +10,9 @@ import (
 	apiconfigphase "k8s.io/kubernetes/cmd/kubeadm/app/phases/apiconfig"
 )
 
+// Addons - deploys the essential addons
+// TODO: should update these
+// TODO: use kubeadm directly
 func Addons(kmmCfg Config) error {
 
 	adminKubeConfigPath := path.Join(kubeadmapi.GlobalEnvParams.KubernetesDir, kubeadmconstants.AdminKubeConfigFileName)
