@@ -2,7 +2,10 @@ package: github.com/UKHomeOffice/keto-k8
 import:
 - package: github.com/spf13/cobra
 - package: github.com/spf13/viper
+- package: github.com/coreos/etcd
+  version: v3.2.0-rc.0
 - package: k8s.io/client-go
-  version: v2.0.0
+  version: v3.0.0-beta.0
 - package: k8s.io/kubernetes
-  version: 1.6.2
+  version: 1.6.3
+- package: github.com/UKHomeOffice/keto
