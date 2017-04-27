@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"os"
 
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,24 +29,43 @@ import (
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/pkg/api/v1"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
-	"k8s.io/kubernetes/pkg/util/node"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const apiCallRetryInterval = 500 * time.Millisecond
 
 // TODO: Can we think of any unit tests here? Or should this code just be covered through integration/e2e tests?
 
+// It's safe to do this for alpha, as we don't have HA and there is no way we can get
+// more then one node here (TODO(phase1+) use os.Hostname)
+func findMyself(client *clientset.Clientset) (*v1.Node, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+
+	nodeList, err := client.Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("unable to list nodes [%v]", err)
+	}
+	if len(nodeList.Items) < 1 {
+		return nil, fmt.Errorf("no nodes found")
+	}
+	for _, nodeItem := range nodeList.Items {
+		node := &nodeItem
+		if node.Name == hostname {
+			return node, nil
+		}
+	}
+	return nil, fmt.Errorf("Cant find this node [%s]", hostname)
+}
+
 func attemptToUpdateMasterRoleLabelsAndTaints(client *clientset.Clientset) error {
-	// Patch from kubeadm HEAD (will find current node...)
-	var n *v1.Node
-	wait.PollInfinite(kubeadmconstants.APICallRetryInterval, func() (bool, error) {
-		var err error
-		if n, err = client.Nodes().Get(node.GetHostname(""), metav1.GetOptions{}); err != nil {
-				return true, nil
-			}
-			return false, nil
-		})
+	n, err := findMyself(client)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("[apiclient] Node found setting taints", n.Name)
 	oldData, err := json.Marshal(n)
 	if err != nil {
 		return err
