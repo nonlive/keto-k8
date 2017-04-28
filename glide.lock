@@ -1,5 +1,5 @@
 hash: a3281349733c902f230f3240b1f5a733fa154af0785dd7470e0f14fa0e106c91
-updated: 2017-05-17T14:10:35.917557542Z
+updated: 2017-05-19T17:34:06.581721631+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -187,19 +187,19 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/Sirupsen/logrus
-  version: 51fe59aca108dc5680109e7b2051cbdcfa5a253c
+  version: 10f801ebc38b33738c9d17d50860f484a0988ff5
 - name: github.com/spf13/cobra
-  version: f62e98d28ab7ad31d707ba837a966378465c7b57
+  version: 5deb57bbca49eb370538fc295ba4b2988f9f5e09
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: github.com/spf13/viper
-  version: 0967fc9aceab2ce9da34061253ac10fb99bba5b2
+  version: 5d46e70da8c0b6f812e0b170b7a985753b5c63cb
 - name: github.com/ugorji/go
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:
   - codec
 - name: github.com/UKHomeOffice/keto
-  version: 7be7ace5f0f8efd45551e63da88f9de54b0c9f54
+  version: e07da3ec0cfff1654247b95c88951c0cbc8636c0
   subpackages:
   - pkg/cloudprovider
   - pkg/cloudprovider/providers
@@ -331,7 +331,7 @@ imports:
   - third_party/forked/golang/json
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: 09064d274dec4a58926c4ad2cdef8a7e82554f79
+  version: f73f4927841f50abc9da5df501decf9eface7679
   subpackages:
   - pkg/authentication/authenticator
   - pkg/authentication/serviceaccount
