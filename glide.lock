@@ -1,13 +1,59 @@
-hash: 1b29984fcf6aef5b397663d173c0af08e49e8b2e202cfa4a831f16cb3d838b4e
-updated: 2017-04-11T14:25:47.686730034+01:00
+hash: a3281349733c902f230f3240b1f5a733fa154af0785dd7470e0f14fa0e106c91
+updated: 2017-05-17T14:10:35.917557542Z
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
   subpackages:
   - compute/metadata
   - internal
+- name: github.com/aws/aws-sdk-go
+  version: 7be45195c3af1b54a609812f90c05a7e492e2491
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/client
+  - aws/client/metadata
+  - aws/corehandlers
+  - aws/credentials
+  - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
+  - aws/credentials/stscreds
+  - aws/defaults
+  - aws/ec2metadata
+  - aws/endpoints
+  - aws/request
+  - aws/session
+  - aws/signer/v4
+  - private/protocol
+  - private/protocol/ec2query
+  - private/protocol/query
+  - private/protocol/query/queryutil
+  - private/protocol/rest
+  - private/protocol/restxml
+  - private/protocol/xml/xmlutil
+  - service/cloudformation
+  - service/cloudformation/cloudformationiface
+  - service/ec2
+  - service/ec2/ec2iface
+  - service/elb
+  - service/elb/elbiface
+  - service/s3
+  - service/s3/s3iface
+  - service/sts
 - name: github.com/blang/semver
   version: 31b736133b98f26d5e078ec9eb591666edfd091f
+- name: github.com/coreos/etcd
+  version: 7e6d876385396bf3ea8f1b58ab24b697a3d9f5d8
+  subpackages:
+  - auth/authpb
+  - clientv3
+  - clientv3/clientv3util
+  - etcdserver/api/v3rpc/rpctypes
+  - etcdserver/etcdserverpb
+  - mvcc/mvccpb
+  - pkg/tlsutil
+  - pkg/transport
 - name: github.com/coreos/go-oidc
   version: be73733bb8cc830d0205609b95d125215f8e9c70
   subpackages:
@@ -68,6 +114,8 @@ imports:
   version: d6023ce2651d8eafb5c75bb0c7167536102ec9f5
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
+- name: github.com/go-ini/ini
+  version: 2e44421e256d82ebbf3d4d4fcabe8930b905eff3
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
@@ -90,7 +138,6 @@ imports:
 - name: github.com/golang/protobuf
   version: 8616e8ee5e20a1704615e6c8d7afcdac06087a67
   subpackages:
-  - jsonpb
   - proto
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
@@ -100,6 +147,8 @@ imports:
   version: 6633656539c1639d9d78127b7d47c622b5d7b6dc
 - name: github.com/inconshreveable/mousetrap
   version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/jmespath/go-jmespath
+  version: 3433f3ea46d9f8019119e7dd41274e112a2359a9
 - name: github.com/jonboulle/clockwork
   version: 72f9bd7c4e0c2a40055ab3d0f09654f730cce982
 - name: github.com/juju/ratelimit
@@ -138,17 +187,24 @@ imports:
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/Sirupsen/logrus
-  version: 10f801ebc38b33738c9d17d50860f484a0988ff5
+  version: 51fe59aca108dc5680109e7b2051cbdcfa5a253c
 - name: github.com/spf13/cobra
-  version: fcd0c5a1df88f5d6784cb4feead962c3f3d0b66c
+  version: f62e98d28ab7ad31d707ba837a966378465c7b57
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: github.com/spf13/viper
-  version: 7538d73b4eb9511d85a9f1dfef202eeb8ac260f4
+  version: 0967fc9aceab2ce9da34061253ac10fb99bba5b2
 - name: github.com/ugorji/go
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:
   - codec
+- name: github.com/UKHomeOffice/keto
+  version: 7be7ace5f0f8efd45551e63da88f9de54b0c9f54
+  subpackages:
+  - pkg/cloudprovider
+  - pkg/cloudprovider/providers
+  - pkg/cloudprovider/providers/aws
+  - pkg/model
 - name: golang.org/x/crypto
   version: d172538b2cfce0c13cee31e647d0367aa8cd2486
   subpackages:
@@ -225,7 +281,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/apimachinery
-  version: 28d5d926c7c976d5885f31ace03d4a9b3ad8abd2
+  version: 75b8dd260ef0469d96d578705a87cffd0e09dab8
   subpackages:
   - pkg/api/equality
   - pkg/api/errors
@@ -275,7 +331,7 @@ imports:
   - third_party/forked/golang/json
   - third_party/forked/golang/reflect
 - name: k8s.io/apiserver
-  version: f73f4927841f50abc9da5df501decf9eface7679
+  version: 09064d274dec4a58926c4ad2cdef8a7e82554f79
   subpackages:
   - pkg/authentication/authenticator
   - pkg/authentication/serviceaccount
@@ -284,7 +340,7 @@ imports:
   - pkg/util/feature
   - pkg/util/flag
 - name: k8s.io/client-go
-  version: 0ec10d4351f32832ab60d381d15e6d9e1f858bd3
+  version: 3627aeb7d4f6ade38f995d2c923e459146493c7e
   subpackages:
   - discovery
   - dynamic
@@ -375,12 +431,13 @@ imports:
   - util/integer
   - util/jsonpath
 - name: k8s.io/kubernetes
-  version: b0b7a323cc5a4a2019b2e9520c21c7830b7f708e
+  version: 0480917b552be33e2dba47386e51decb1a211df6
   subpackages:
   - cmd/kubeadm/app/apis/kubeadm
   - cmd/kubeadm/app/constants
   - cmd/kubeadm/app/images
   - cmd/kubeadm/app/master
+  - cmd/kubeadm/app/phases/addons
   - cmd/kubeadm/app/phases/apiconfig
   - cmd/kubeadm/app/preflight
   - cmd/kubeadm/app/util

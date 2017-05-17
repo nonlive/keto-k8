@@ -24,7 +24,7 @@ import (
 	"os"
 	"testing"
 
-	certutil "k8s.io/client-go/util/cert"
+	certutil "github.com/UKHomeOffice/keto-k8/pkg/client-go/util/cert"
 )
 
 func TestNewCertificateAuthority(t *testing.T) {
