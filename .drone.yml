@@ -5,7 +5,7 @@ workspace:
 
 pipeline:
   test:
-    image: golang:1.8
+    image: golang:${GO_VERSION}
     commands:
       - mkdir -p /go/bin
       - "curl -s https://glide.sh/get | sh"
@@ -22,4 +22,3 @@ matrix:
   GO_VERSION:
     - latest
     - "1.8"
-    - "1.7"
