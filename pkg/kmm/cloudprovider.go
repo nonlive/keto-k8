@@ -56,7 +56,6 @@ func SaveCloudAssets(cloudprovider, etcdCa, etcdCaKey, kubeCa, kubeCaKey string)
 					return err
 				}
 			}
-
 			// Only write a file if it didn't exist
 			err = ioutil.WriteFile(file.FileName, file.Value, file.Mode)
 			if err != nil {

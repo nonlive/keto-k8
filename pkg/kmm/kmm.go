@@ -13,6 +13,7 @@ import (
 	"github.com/UKHomeOffice/keto-k8/pkg/fileutil"
 	"github.com/UKHomeOffice/keto-k8/pkg/constants"
 	"github.com/UKHomeOffice/keto-k8/pkg/network"
+	"github.com/UKHomeOffice/keto-k8/pkg/tokens"
 	"github.com/UKHomeOffice/keto/pkg/cloudprovider"
 )
 
@@ -34,6 +35,8 @@ type Config struct {
 
 	// network provider string
 	NetworkProvider		string
+
+	ClusterName			string
 }
 
 // Manifests - Will generate static manefest files
@@ -138,6 +141,24 @@ func InstallNetwork(networkProvider string) (err error) {
 	return np.Create(constants.DefaultPodNetwork)
 }
 
+// SetupCompute will configure a compute node - currently just saves an env file
+func SetupCompute(cloud string) (err error) {
+
+	cfg := Config{
+		KubeadmCfg: kubeadm.Config {
+			CloudProvider:	cloud,
+		},
+	}
+	// Get data from cloud provider
+	if err = updateCloudCfg(&cfg) ; err != nil {
+		return err
+	}
+	if err = tokens.WriteKetoTokenEnv(cloud, cfg.KubeadmCfg.APIServer.String()); err != nil {
+		return fmt.Errorf("Error saving KetoTokenEnv:%q", err)
+	}
+	return nil
+}
+
 func bootstrapOnce(cfg Config) (assets string, err error) {
 
 	defer CleanUp(cfg, true, false)
@@ -157,6 +178,9 @@ func bootstrapOnce(cfg Config) (assets string, err error) {
 		return "", err
 	}
 	if err = InstallNetwork(cfg.NetworkProvider); err != nil {
+		return "", err
+	}
+	if err = tokens.Deploy(cfg.ClusterName); err != nil {
 		return "", err
 	}
 	return assets, nil
@@ -194,6 +218,11 @@ func updateCloudCfg(cfg *Config) (err error) {
 		if node, err = getNodeInterface(cfg.KubeadmCfg.CloudProvider); err != nil {
 			return err
 		}
+		var clusterName string
+		if clusterName, err = node.GetClusterName(); err != nil {
+			return fmt.Errorf("Error getting cluster name cloud provider:%q", err)
+		}
+		cfg.ClusterName = clusterName
 		var api string
 		if api, err = node.GetKubeAPIURL(); err != nil {
 			return fmt.Errorf("Error getting Api server from cloud provider:%q", err)
