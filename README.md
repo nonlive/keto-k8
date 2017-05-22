@@ -1,4 +1,4 @@
-# kmm - kubernetes multi-master
+# kmm aka keto-k8
 
 Enables the use of multiple Kubernetes masters by ensuring unique resources are generated on only one master node.
 

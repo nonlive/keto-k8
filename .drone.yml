@@ -5,7 +5,7 @@ workspace:
 
 pipeline:
   test:
-    image: golang:${GO_VERSION}
+    image: golang:1.8
     commands:
       - mkdir -p /go/bin
       - "curl -s https://glide.sh/get | sh"
@@ -17,8 +17,43 @@ pipeline:
       - go vet $(go list ./... | grep -v /vendor)
       - go test -cover $(go list ./... | grep -v /vendor)
       - go build $(go list ./... | grep -v /vendor)
+      - go build github.com/${DRONE_REPO}/cmd/kmm
 
-matrix:
-  GO_VERSION:
-    - latest
-    - "1.8"
+  docker_build:
+    image: docker:1.12
+    environment:
+      - DOCKER_HOST=tcp://127.0.0.1:2375
+    commands:
+      - docker build -t image .
+
+  image_to_quay:
+    image: docker:1.12
+    environment:
+      - DOCKER_HOST=tcp://127.0.0.1:2375
+    commands:
+      - docker login -u="ukhomeofficedigital+drone_keto_k8" -p=${DOCKER_PASSWORD} quay.io
+      - docker tag image quay.io/ukhomeofficedigital/keto-k8:${DRONE_COMMIT_SHA}
+      - docker push quay.io/ukhomeofficedigital/keto-k8:${DRONE_COMMIT_SHA}
+    when:
+      event: push
+
+  tag_image_to_quay:
+    image: docker:1.12
+    environment:
+      - DOCKER_HOST=tcp://127.0.0.1:2375
+    commands:
+      - docker login -u="ukhomeofficedigital+drone_keto_k8" -p=${DOCKER_PASSWORD} quay.io
+      - docker tag image quay.io/ukhomeofficedigital/keto-k8:${DRONE_TAG}
+      - docker push quay.io/ukhomeofficedigital/keto-k8:${DRONE_TAG}
+      - docker tag image quay.io/ukhomeofficedigital/keto-k8:latest
+      - docker push quay.io/ukhomeofficedigital/keto-k8:latest
+    when:
+      event: tag
+
+services:
+  dind:
+    image: docker:1.12-dind
+    privileged: true
+    command:
+      - "-s"
+      - "overlay"
