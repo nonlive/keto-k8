@@ -17,7 +17,7 @@ pipeline:
       - go vet $(go list ./... | grep -v /vendor)
       - go test -cover $(go list ./... | grep -v /vendor)
       - go build $(go list ./... | grep -v /vendor)
-      - go build github.com/${DRONE_REPO}/cmd/kmm
+      - CGO_ENABLED=0 go build -a -v github.com/${DRONE_REPO}/cmd/kmm
 
   docker_build:
     image: docker:1.12
@@ -45,10 +45,20 @@ pipeline:
       - docker login -u="ukhomeofficedigital+drone_keto_k8" -p=${DOCKER_PASSWORD} quay.io
       - docker tag image quay.io/ukhomeofficedigital/keto-k8:${DRONE_TAG}
       - docker push quay.io/ukhomeofficedigital/keto-k8:${DRONE_TAG}
+    when:
+      event: tag
+
+  update_latest_to_quay:
+    image: docker:1.12
+    environment:
+      - DOCKER_HOST=tcp://127.0.0.1:2375
+    commands:
+      - docker login -u="ukhomeofficedigital+drone_keto_k8" -p=${DOCKER_PASSWORD} quay.io
       - docker tag image quay.io/ukhomeofficedigital/keto-k8:latest
       - docker push quay.io/ukhomeofficedigital/keto-k8:latest
     when:
-      event: tag
+      event: push
+      branch: master
 
 services:
   dind:
