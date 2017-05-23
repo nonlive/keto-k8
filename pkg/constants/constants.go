@@ -19,5 +19,5 @@ const (
 	KetoTokenEnvName =  "/etc/kubernetes/keto-token.env"
 
 	// KetoTokenImage specifies the image to use when running keto-tokens
-	KetoTokenImage = "quay.io/ukhomeofficedigital/keto-tokens:v0.0.2"
+	KetoTokenImage = "quay.io/ukhomeofficedigital/keto-tokens:v0.0.3"
 )
