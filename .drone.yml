@@ -26,6 +26,14 @@ pipeline:
     commands:
       - docker build -t image .
 
+  docker_int_test:
+    image: docker:1.12
+    environment:
+      - DOCKER_HOST=tcp://127.0.0.1:2375
+    commands:
+      # TODO: wire up the scripts in the ./tests directory
+      - docker run -i image --help
+
   image_to_quay:
     image: docker:1.12
     environment:
