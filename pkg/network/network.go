@@ -1,8 +1,10 @@
 package network
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
+	"text/template"
 
 	"github.com/UKHomeOffice/keto-k8/pkg/k8client"
 	log "github.com/Sirupsen/logrus"
@@ -11,7 +13,8 @@ import (
 // Provider is an abstract interface for Network.
 type Provider interface {
 	Name() string
-	Create(podNetworkCidr string) error
+	Create() error
+	PodNetworkCidr() string
 }
 
 // ProviderFactory - Interface definition for a network.provider implementation
@@ -54,9 +57,29 @@ func CreateProvider(networkProvider string) (Provider, error) {
 func init() {
 	Register(NewFlannelNetworkProvider)
 	Register(NewWeaveNetworkProvider)
+	Register(NewCanalNetworkProvider)
 }
 
-// Private method for any providers to call without knowledge of k8 client specifics
-func createk8objects(resources string)(error) {
-	return k8client.Create(resources)
+func renderandDeploy(podNetworkCidr, cniYaml string) (error) {
+	k8Definition, err := renderCniYaml(podNetworkCidr, cniYaml)
+	if err != nil {
+		return err
+	}
+	return k8client.Create(string(k8Definition[:]))
+}
+
+// Grab the resources for deploying a network
+func renderCniYaml(podNetworkCidr, cniYaml string) ([]byte, error) {
+	data := struct {
+		Network	string
+	}{
+		Network: podNetworkCidr,
+	}
+	t := template.Must(template.New("cniYaml").Parse(cniYaml))
+	var b bytes.Buffer
+	if err := t.Execute(&b, data); err != nil {
+		return b.Bytes(), err
+	}
+
+	return b.Bytes(), nil
 }

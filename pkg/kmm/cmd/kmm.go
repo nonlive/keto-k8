@@ -8,6 +8,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/UKHomeOffice/keto-k8/pkg/kmm"
+	"github.com/UKHomeOffice/keto-k8/pkg/network"
 	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm"
 )
 
@@ -83,7 +84,7 @@ func init() {
 		"etcd-cluster-hostnames",
 		getDefaultFromEnvs([]string{"KMM_ETCD_CLUSTER_HOSTNAMES"}, ""),
 		"ETCD hostnames (defaults: KMM_ETCD_CLUSTER_HOSTNAMES or parsed from ETCD_INITIAL_CLUSTER)")
-	RootCmd.PersistentFlags().String("network-provider", "flannel", "Network Provider (flannel / weave)")
+	RootCmd.PersistentFlags().String("network-provider", "flannel", "Network Provider (flannel / weave / canal)")
 }
 
 // Will return a valid Kmm.Config object for the relevant flags...
@@ -120,6 +121,11 @@ func getKmmConfig(cmd *cobra.Command) (cfg kmm.Config, err error) {
 		KubePersistentCaKey:	cmd.Flag("kube-ca-key").Value.String(),
 		NetworkProvider:		cmd.Flag("network-provider").Value.String(),
 	}
+	var np network.Provider
+	if np, err = network.CreateProvider(cfg.NetworkProvider); err != nil {
+		return cfg, err
+	}
+	cfg.KubeadmCfg.PodNetworkCidr = np.PodNetworkCidr()
 
 	if len(cfg.KubePersistentCaCert) < 1 {
 		return cfg, fmt.Errorf("A Kube CA cert file must be specified")

@@ -14,6 +14,7 @@ import (
 	certutil "github.com/UKHomeOffice/keto-k8/pkg/client-go/util/cert"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubeadmconstants "k8s.io/kubernetes/cmd/kubeadm/app/constants"
+
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm/pkiutil"
@@ -48,6 +49,7 @@ type Config struct {
 	CloudProvider    string
 	KubeVersion      string
 	MasterCount      uint
+	PodNetworkCidr   string
 }
 
 // SharedAssets - the data to be shared between all kubernetes masters
@@ -201,11 +203,8 @@ func GetKubeadmCfg(kmmCfg Config) (*kubeadmapi.MasterConfiguration, error) {
 	}
 	cfg.CertificatesDir = kubeadmconstants.KubernetesDir + "/pki"
 	cfg.Networking.DNSDomain = constants.DefaultServiceDNSDomain
-
-	// TODO: Set dynamically depending on network to be used...
 	cfg.Networking.ServiceSubnet = constants.DefaultServicesSubnet
-	cfg.Networking.PodSubnet = constants.DefaultPodNetwork
-
+	cfg.Networking.PodSubnet = kmmCfg.PodNetworkCidr
 	return cfg, nil
 }
 
