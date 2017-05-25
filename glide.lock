@@ -1,5 +1,5 @@
-hash: a3281349733c902f230f3240b1f5a733fa154af0785dd7470e0f14fa0e106c91
-updated: 2017-05-19T17:34:06.581721631+01:00
+hash: 365fd1813d55c499fa8f44a1d752544e2a6d026a2615d7881b8e7a8d40f47486
+updated: 2017-05-25T14:57:02.060526513+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -431,7 +431,7 @@ imports:
   - util/integer
   - util/jsonpath
 - name: k8s.io/kubernetes
-  version: 0480917b552be33e2dba47386e51decb1a211df6
+  version: d6f433224538d4f9ca2f7ae19b252e6fcb66a3ae
   subpackages:
   - cmd/kubeadm/app/apis/kubeadm
   - cmd/kubeadm/app/constants
