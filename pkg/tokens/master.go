@@ -14,7 +14,7 @@ func Deploy(clusterName string) (error) {
 	if err != nil {
 		return err
 	}
-	return k8client.Create(k8Definition)
+	return k8client.Apply(k8Definition)
 }
 
 func getDeployment(clusterName string) (string, error) {

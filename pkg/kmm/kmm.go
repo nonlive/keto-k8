@@ -1,17 +1,16 @@
 package kmm
 
 import (
-	"os"
-	"time"
 	"errors"
-	"net/url"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"net/url"
+	"os"
+	"time"
 
 	"github.com/UKHomeOffice/keto-k8/pkg/etcd"
-	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm"
 	"github.com/UKHomeOffice/keto-k8/pkg/fileutil"
-	"github.com/UKHomeOffice/keto-k8/pkg/constants"
+	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm"
 	"github.com/UKHomeOffice/keto-k8/pkg/network"
 	"github.com/UKHomeOffice/keto-k8/pkg/tokens"
 	"github.com/UKHomeOffice/keto/pkg/cloudprovider"
@@ -22,21 +21,18 @@ const assetLockKey string = "kmm-asset-lock"
 
 // Config - the complete configuration provided for all kmm use
 type Config struct {
-	KubeadmCfg           kubeadm.Config
+	KubeadmCfg kubeadm.Config
 
 	/*
 	 To provide the least change to kubeadm and prevent access to the key,
 	 we copy and link from the persistent source as appropriate
 
 	 TODO: Update kubeadm to allow for specified CA key locations
-	  */
+	*/
 	KubePersistentCaCert string
 	KubePersistentCaKey  string
-
-	// network provider string
-	NetworkProvider		string
-
-	ClusterName			string
+	ClusterName          string
+	NetworkProvider      string
 }
 
 // Manifests - Will generate static manefest files
@@ -50,10 +46,10 @@ func Manifests(cfg kubeadm.Config) (err error) {
 // GetAssets - kmm core logic
 func GetAssets(cfg Config) (err error) {
 
-	if err = updateCloudCfg(&cfg) ; err != nil {
+	if err = updateCloudCfg(&cfg); err != nil {
 		return err
 	}
-	if err = copyKubeCa(cfg) ; err != nil {
+	if err = copyKubeCa(cfg); err != nil {
 		return err
 	}
 	if err = kubeadm.WriteManifests(cfg.KubeadmCfg); err != nil {
@@ -81,7 +77,7 @@ func GetAssets(cfg Config) (err error) {
 				}
 				bootStrappedHere = true
 				// Only share assets when all done OK!
-				if err = etcd.PutTx(cfg.KubeadmCfg.EtcdClientConfig, assetKey, assets) ; err != nil {
+				if err = etcd.PutTx(cfg.KubeadmCfg.EtcdClientConfig, assetKey, assets); err != nil {
 					return err
 				}
 			} else {
@@ -99,11 +95,11 @@ func GetAssets(cfg Config) (err error) {
 		}
 	}
 	// We have the shared assets, now re-create anything missing...
-	if ! bootStrappedHere {
-		if err := kubeadm.CreatePKI(cfg.KubeadmCfg) ; err != nil {
+	if !bootStrappedHere {
+		if err := kubeadm.CreatePKI(cfg.KubeadmCfg); err != nil {
 			return err
 		}
-		if err = kubeadm.CreateKubeConfig(cfg.KubeadmCfg) ; err != nil {
+		if err = kubeadm.CreateKubeConfig(cfg.KubeadmCfg); err != nil {
 			return err
 		}
 		if kubeadm.UpdateMasterRoleLabelsAndTaints(cfg.KubeadmCfg); err != nil {
@@ -138,19 +134,19 @@ func InstallNetwork(networkProvider string) (err error) {
 	if np, err = network.CreateProvider(networkProvider); err != nil {
 		return err
 	}
-	return np.Create(constants.DefaultPodNetwork)
+	return np.Create()
 }
 
 // SetupCompute will configure a compute node - currently just saves an env file
 func SetupCompute(cloud string) (err error) {
 
 	cfg := Config{
-		KubeadmCfg: kubeadm.Config {
-			CloudProvider:	cloud,
+		KubeadmCfg: kubeadm.Config{
+			CloudProvider: cloud,
 		},
 	}
 	// Get data from cloud provider
-	if err = updateCloudCfg(&cfg) ; err != nil {
+	if err = updateCloudCfg(&cfg); err != nil {
 		return err
 	}
 	if err = tokens.WriteKetoTokenEnv(cloud, cfg.KubeadmCfg.APIServer.String()); err != nil {
