@@ -65,7 +65,7 @@ func renderandDeploy(podNetworkCidr, cniYaml string) (error) {
 	if err != nil {
 		return err
 	}
-	return k8client.Create(string(k8Definition[:]))
+	return k8client.Apply(string(k8Definition[:]))
 }
 
 // Grab the resources for deploying a network

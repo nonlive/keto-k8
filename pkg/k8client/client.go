@@ -12,9 +12,9 @@ const cmdKubectl string = "kubectl"
 
 // Create - Will take a yaml string and deploy it to the API...
 // TODO: Use API (sort out build issues with client lib and kubeadm)
-func Create(resource string) (error) {
+func Apply(resource string) (error) {
 	var args = []string {
-		"create",
+		"apply",
 		"-f",
 	    "-",
 	}
