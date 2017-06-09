@@ -5,11 +5,12 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"os/exec"
 	"io/ioutil"
-	"strings"
 	"net"
 	"net/url"
+	"os/exec"
+	"strconv"
+	"strings"
 
 	certutil "github.com/UKHomeOffice/keto-k8/pkg/client-go/util/cert"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
@@ -17,10 +18,9 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm/pkiutil"
-	"github.com/UKHomeOffice/keto-k8/pkg/etcd"
 	"github.com/UKHomeOffice/keto-k8/pkg/constants"
-	"strconv"
+	"github.com/UKHomeOffice/keto-k8/pkg/etcd"
+	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm/pkiutil"
 )
 
 const cmdKubeadm string = "kubeadm"
@@ -171,7 +171,7 @@ func CreateKubeConfig(cfg Config) (err error) {
 // GetKubeadmCfg - will transfer config from kmm to a config struct as used by kubeadm internaly
 // TODO: This is a hack until we can use kubeadm cmd directly...
 func GetKubeadmCfg(kmmCfg Config) (*kubeadmapi.MasterConfiguration, error) {
-	var cfg = &kubeadmapi.MasterConfiguration{}
+	cfg := &kubeadmapi.MasterConfiguration{}
 	port := kmmCfg.APIServer.Port()
 	if port == "" {
 		cfg.API.BindPort = 6443
@@ -202,6 +202,7 @@ func GetKubeadmCfg(kmmCfg Config) (*kubeadmapi.MasterConfiguration, error) {
 		cfg.KubernetesVersion = kmmCfg.KubeVersion
 	}
 	cfg.CertificatesDir = kubeadmconstants.KubernetesDir + "/pki"
+	cfg.CloudProvider = kmmCfg.CloudProvider
 	cfg.Networking.DNSDomain = constants.DefaultServiceDNSDomain
 	cfg.Networking.ServiceSubnet = constants.DefaultServicesSubnet
 	cfg.Networking.PodSubnet = kmmCfg.PodNetworkCidr
