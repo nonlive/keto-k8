@@ -10,8 +10,8 @@ import (
 
 const cmdKubectl string = "kubectl"
 
-// Create - Will take a yaml string and deploy it to the API...
-// TODO: Use API (sort out build issues with client lib and kubeadm)
+// TODO: Use API - parse types from input YAML and create generic function
+// Apply will take a yaml string and deploy it to the API...
 func Apply(resource string) (error) {
 	var args = []string {
 		"apply",
