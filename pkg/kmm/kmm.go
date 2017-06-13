@@ -102,6 +102,9 @@ func GetAssets(cfg Config) (err error) {
 		if err = kubeadm.CreateKubeConfig(cfg.KubeadmCfg); err != nil {
 			return err
 		}
+		if err = CreateAndStartKubelet(cfg.KubeadmCfg.CloudProvider, cfg.KubeadmCfg.KubeVersion, true); err != nil {
+			return err
+		}
 		if kubeadm.UpdateMasterRoleLabelsAndTaints(cfg.KubeadmCfg); err != nil {
 			return err
 		}
@@ -152,7 +155,7 @@ func SetupCompute(cloud string) (err error) {
 	if err = tokens.WriteKetoTokenEnv(cloud, cfg.KubeadmCfg.APIServer.String()); err != nil {
 		return fmt.Errorf("Error saving KetoTokenEnv:%q", err)
 	}
-	return nil
+	return CreateAndStartKubelet(cloud, cfg.KubeadmCfg.KubeVersion, false)
 }
 
 func bootstrapOnce(cfg Config) (assets string, err error) {
@@ -168,6 +171,9 @@ func bootstrapOnce(cfg Config) (assets string, err error) {
 
 	// We have the assets but we must NOT proceed until we've finish bootstrapping / sharing...
 	if err = kubeadm.CreateKubeConfig(cfg.KubeadmCfg); err != nil {
+		return "", err
+	}
+	if err = CreateAndStartKubelet(cfg.KubeadmCfg.CloudProvider, cfg.KubeadmCfg.KubeVersion, true); err != nil {
 		return "", err
 	}
 	if err = kubeadm.Addons(cfg.KubeadmCfg); err != nil {
