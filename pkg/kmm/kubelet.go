@@ -8,9 +8,9 @@ import (
 	"path"
 	"text/template"
 
-	"github.com/UKHomeOffice/keto-k8/pkg/constants"
-	"github.com/UKHomeOffice/keto-k8/pkg/fileutil"
 	"github.com/coreos/go-systemd/dbus"
+	"github.com/UKHomeOffice/keto-k8/pkg/fileutil"
+	"github.com/UKHomeOffice/keto-k8/pkg/constants"
 )
 
 // CreateAndStartKubelet will create Kubelet
@@ -18,13 +18,13 @@ func CreateAndStartKubelet(cloudProvider, kubeVersion string, master bool) error
 
 	// Render kubelet.service
 	data := struct {
-		CloudProviderName string
-		KubeVersion       string
-		IsMaster          bool
+		CloudProviderName	string
+		KubeVersion			string
+		IsMaster			bool
 	}{
-		CloudProviderName: cloudProvider,
-		KubeVersion:       kubeVersion,
-		IsMaster:          master,
+		CloudProviderName:	cloudProvider,
+		KubeVersion:		kubeVersion,
+		IsMaster:			master,
 	}
 	t := template.Must(template.New("kubeletUnit").Parse(kubeletTemplate))
 	var b bytes.Buffer
@@ -63,24 +63,24 @@ func CreateAndStartKubelet(cloudProvider, kubeVersion string, master bool) error
 	if !fileutil.ExistFile(constants.KubeletUnitFileName) {
 		// Create unit
 		if err := ioutil.WriteFile(constants.KubeletUnitFileName, []byte(b.Bytes()), 0644); err != nil {
-			return fmt.Errorf("Can not save unit file [%v]: [%v]",
+			return fmt.Errorf("Can't save unit file [%v]: [%v]",
 				constants.KubeletUnitFileName,
 				err)
 		}
 	}
 	// Daemon-reload TODO: make reload unit specific
 	if err := conn.Reload(); err != nil {
-		return fmt.Errorf("problem reloading systemd units after adding %q; [%v]", target, err)
+		return fmt.Errorf("Problem reloading systemd units after adding %q; [%v]",target, err)
 	}
 
 	// Start / restart unit
 	reschan := make(chan string)
 	if _, err := conn.StartUnit(target, "replace", reschan); err != nil {
-		return fmt.Errorf("can't start unit [%v] - [%v]", target, err)
+		return fmt.Errorf("Can't start unit [%v] - [%v]", target, err)
 	}
 	job := <-reschan
 	if job != "done" {
-		return fmt.Errorf("unknown error starting [%v]", target)
+		return fmt.Errorf("Unknown error starting [%v]", target)
 	}
 
 	// TODO: enable unit (link if required)
