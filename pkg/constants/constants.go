@@ -17,4 +17,7 @@ const (
 
 	// KetoTokenImage specifies the image to use when running keto-tokens
 	KetoTokenImage = "quay.io/ukhomeofficedigital/keto-tokens:v0.0.3"
+
+	// KubeletUnitFileName is the location to save the systemd file for the kubelet
+	KubeletUnitFileName = "/etc/systemd/system/kubelet.system"
 )
