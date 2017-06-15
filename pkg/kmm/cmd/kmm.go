@@ -6,10 +6,10 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/spf13/cobra"
 	"github.com/UKHomeOffice/keto-k8/pkg/kmm"
-	"github.com/UKHomeOffice/keto-k8/pkg/network"
 	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm"
+	"github.com/UKHomeOffice/keto-k8/pkg/network"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -18,17 +18,12 @@ var (
 		Use:   "kmm",
 		Short: "Kubernetes multi-master",
 		Long:  "Kubernetes multi-master. Given CA's for etcd and Kubernetes, will automate starting kubernetes masters",
-		Run: func(cmd *cobra.Command, args []string) {
-			var cfg kmm.Config
-			var err error
-			if cfg, err = getKmmConfig(cmd); err != nil {
-				log.Fatal(err)
-				os.Exit(-1)
+		RunE: func(c *cobra.Command, args []string) error {
+			if c.Flags().Changed("version") {
+				printVersion()
+				return nil
 			}
-			if err := kmm.GetAssets(cfg); err != nil {
-				log.Fatal(err)
-				os.Exit(-1)
-			}
+			return c.Usage()
 		},
 	}
 )
@@ -42,6 +37,11 @@ func Execute() {
 }
 
 func init() {
+	log.SetFormatter(&log.TextFormatter{
+		DisableTimestamp: true,
+		DisableSorting:   true,
+	})
+
 	// Local flags
 	RootCmd.Flags().BoolP("help", "h", false, "Help message")
 	RootCmd.Flags().BoolP("version", "v", false, "Print version")
@@ -90,6 +90,12 @@ func init() {
 // Will return a valid Kmm.Config object for the relevant flags...
 func getKmmConfig(cmd *cobra.Command) (cfg kmm.Config, err error) {
 
+	var exitOnCompletion bool
+	if cmd.Flag(ExitOnCompletionFlagName) != nil {
+		exitOnCompletion, _ = cmd.Flags().GetBool(ExitOnCompletionFlagName)
+	} else {
+		exitOnCompletion = true
+	}
 	etcdConfig, err := getEtcdClientConfig(cmd)
 	if err != nil {
 		return cfg, err
@@ -107,19 +113,21 @@ func getKmmConfig(cmd *cobra.Command) (cfg kmm.Config, err error) {
 		return cfg, err
 	}
 	kubeadmConfig := kubeadm.Config{
-		APIServer:			url,
-		KubeVersion:		cmd.Flag("kube-version").Value.String(),
-		KubeletID:			cmd.Flag("kube-kubeletid").Value.String(),
-		CloudProvider:		cmd.Flag("cloud-provider").Value.String(),
-		EtcdClientConfig: 	etcdConfig,
-		MasterCount:		uint(len(masterHosts)),
+		APIServer:        url,
+		KubeVersion:      cmd.Flag("kube-version").Value.String(),
+		KubeletID:        cmd.Flag("kube-kubeletid").Value.String(),
+		CloudProvider:    cmd.Flag("cloud-provider").Value.String(),
+		EtcdClientConfig: etcdConfig,
+		MasterCount:      uint(len(masterHosts)),
 	}
-
 	cfg = kmm.Config{
-		KubeadmCfg: kubeadmConfig,
-		KubePersistentCaCert:	cmd.Flag("kube-ca-cert").Value.String(),
-		KubePersistentCaKey:	cmd.Flag("kube-ca-key").Value.String(),
-		NetworkProvider:		cmd.Flag("network-provider").Value.String(),
+		ConfigType: kmm.ConfigType{
+			KubeadmCfg:           &kubeadmConfig,
+			KubePersistentCaCert: cmd.Flag("kube-ca-cert").Value.String(),
+			KubePersistentCaKey:  cmd.Flag("kube-ca-key").Value.String(),
+			NetworkProvider:      cmd.Flag("network-provider").Value.String(),
+			ExitOnCompletion:     exitOnCompletion,
+		},
 	}
 	var np network.Provider
 	if np, err = network.CreateProvider(cfg.NetworkProvider); err != nil {

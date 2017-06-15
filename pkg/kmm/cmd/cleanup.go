@@ -19,7 +19,8 @@ var cleanupCmd = &cobra.Command{
 func cleanUp(c *cobra.Command) {
 	cfg, err := getKmmConfig(c)
 	if err == nil {
-		err = kmm.CleanUp(cfg, true, true)
+		k := kmm.New(cfg)
+		err = k.Kmm.CleanUp(true, true)
 	}
 	if err != nil {
 		log.Fatal(err)

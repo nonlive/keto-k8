@@ -18,213 +18,267 @@ import (
 
 const assetKey string = "kmm-asset-key"
 const assetLockKey string = "kmm-asset-lock"
+const defaultBackOff time.Duration = 20 * time.Second
 
-// Config - the complete configuration provided for all kmm use
-type Config struct {
-	KubeadmCfg kubeadm.Config
+// Interface defined to enable testing of core functions without dependencies
+type Interface interface {
+	CleanUp(releaseLock, deleteAssets bool) (err error)
+	CopyKubeCa() (err error)
+	InstallNetwork() (err error)
+	TokensDeploy() error
+	UpdateCloudCfg() (err error)
+	CreateAndStartKubelet(master bool) error
+}
 
-	/*
-	 To provide the least change to kubeadm and prevent access to the key,
-	 we copy and link from the persistent source as appropriate
-
-	 TODO: Update kubeadm to allow for specified CA key locations
-	*/
+// ConfigType is the complete configuration provided for all kmm use
+type ConfigType struct {
+	KubeadmCfg           *kubeadm.Config
 	KubePersistentCaCert string
 	KubePersistentCaKey  string
 	ClusterName          string
 	NetworkProvider      string
+	MasterBackOffTime    time.Duration
+	ExitOnCompletion     bool
+	Etcd                 etcd.Clienter
+	Kubeadm              kubeadm.Kubeadmer
+	Kmm                  Interface
 }
 
-// Manifests - Will generate static manefest files
-func Manifests(cfg kubeadm.Config) (err error) {
-	if err = kubeadm.WriteManifests(cfg); err != nil {
-		return err
-	}
-	return nil
+// Both structs here use the same config but are bound to different methods...
+
+// Config is tied to the Primary methods (no interface - not for mocking)
+type Config struct {
+	ConfigType
 }
 
-// GetAssets - kmm core logic
-func GetAssets(cfg Config) (err error) {
+// Kmm is a concrete implementation of the testable (mockable) methods
+type Kmm struct {
+	ConfigType
+}
 
-	if err = updateCloudCfg(&cfg); err != nil {
-		return err
-	}
-	if err = copyKubeCa(cfg); err != nil {
-		return err
-	}
-	if err = kubeadm.WriteManifests(cfg.KubeadmCfg); err != nil {
-		return err
-	}
+// SetupCompute will configure a compute node - currently just saves an env file
+func SetupCompute(cloud string) (err error) {
 
-	bootStrappedHere := false
-	assets := ""
+	cfg := Config{}
+	cfg.KubeadmCfg.CloudProvider = cloud
+	k := New(cfg)
+	// Get data from cloud provider
+	if err = k.Kmm.UpdateCloudCfg(); err != nil {
+		return err
+	}
+	// TODO: make testable interface here too
+	if err = tokens.WriteKetoTokenEnv(cloud, cfg.KubeadmCfg.APIServer.String()); err != nil {
+		return fmt.Errorf("Error saving KetoTokenEnv:%q", err)
+	}
+	return k.Kmm.CreateAndStartKubelet(false)
+}
+
+// New creates a new kmm struct with live interface from configuration
+func New(cfg Config) *Config {
+	cfg.MasterBackOffTime = defaultBackOff
+
+	cfg.Etcd = etcd.New(cfg.KubeadmCfg.EtcdClientConfig)
+	cfg.Kubeadm = cfg.KubeadmCfg
+
+	// Wire up the concrete implementation with the same data
+	kmm := &Kmm{}
+	kmm.ConfigType = cfg.ConfigType
+	cfg.Kmm = kmm
+
+	return &cfg
+}
+
+// CreateOrGetSharedAssets core logic
+func (k *Config) CreateOrGetSharedAssets() (err error) {
+
+	log.Printf("Determin if primary master...")
+	if err = k.Kmm.UpdateCloudCfg(); err != nil {
+		return err
+	}
+	if err = k.Kmm.CopyKubeCa(); err != nil {
+		return err
+	}
+	if err = k.Kubeadm.WriteManifests(); err != nil {
+		return err
+	}
 
 	// Keep trying to get Assets
-	for assets == "" {
-		assets, err = etcd.Get(cfg.KubeadmCfg.EtcdClientConfig, assetKey)
+	for true {
+		assets, err := k.Etcd.Get(assetKey)
 		if err == etcd.ErrKeyMissing {
 			log.Printf("Assets not present in etcd...\n")
 			// obtain lock...
-			mylock, err := etcd.GetLock(cfg.KubeadmCfg.EtcdClientConfig, assetLockKey)
+			// TODO: pass in lock TTL from here
+			mylock, err := k.Etcd.GetOrCreateLock(assetLockKey)
 			if err != nil {
 				// May need to add retry logic?
 				return err
 			}
 			if mylock {
 				log.Printf("Obtained lock, creating assets...")
-				if assets, err = bootstrapOnce(cfg); err != nil {
+				if assets, err = k.BootstrapOnce(); err != nil {
+					k.Kmm.CleanUp(true, false)
 					return err
 				}
-				bootStrappedHere = true
 				// Only share assets when all done OK!
-				if err = etcd.PutTx(cfg.KubeadmCfg.EtcdClientConfig, assetKey, assets); err != nil {
+				log.Printf("Saving assets to etcd...")
+				if err = k.Etcd.PutTx(assetKey, assets); err != nil {
+					k.Kmm.CleanUp(true, false)
 					return err
 				}
-			} else {
-				// We need to try and get the assets again after a back off
-				time.Sleep(20 * time.Second)
+				log.Printf("Assets shared to etcd")
+				break
 			}
+			// We need to try and get the assets again after a back off
+			time.Sleep(k.MasterBackOffTime)
 		} else if err != nil {
 			return err
 		} else {
-			// Assets present in etcd so save assets
-			log.Printf("Saving assets to disk...")
-			if err := kubeadm.SaveAssets(cfg.KubeadmCfg, assets); err != nil {
+			// Assets present in etcd so save assets and boot secondary master...
+			if err = k.BootstrapSecondaryMaster(assets); err != nil {
 				return err
 			}
+			break
 		}
 	}
-	// We have the shared assets, now re-create anything missing...
-	if !bootStrappedHere {
-		if err := kubeadm.CreatePKI(cfg.KubeadmCfg); err != nil {
-			return err
-		}
-		if err = kubeadm.CreateKubeConfig(cfg.KubeadmCfg); err != nil {
-			return err
-		}
-		if err = CreateAndStartKubelet(cfg.KubeadmCfg.CloudProvider, cfg.KubeadmCfg.KubeVersion, true); err != nil {
-			return err
-		}
-		if kubeadm.UpdateMasterRoleLabelsAndTaints(cfg.KubeadmCfg); err != nil {
-			return err
-		}
+	// TODO: For now...
+	//       Will make loop optional so we can run as a cli for e2e tests
+	//       Will need a retry loop if we implement run-time keto-k8 upgrades...
+	log.Printf("Master bootstrapped")
+	if ! k.ExitOnCompletion {
+		for true {}
 	}
 	return nil
 }
 
+// BootstrapSecondaryMaster will start a secondary master (cluster unique assets not created here)
+func (k *Config) BootstrapSecondaryMaster(assets string) (error) {
+	// We have the shared assets, now re-create anything missing...
+	log.Printf("Not primary master (in this run)...")
+	log.Printf("Saving assets to disk...")
+	if err := k.Kubeadm.SaveAssets(assets); err != nil {
+		return err
+	}
+	if err := k.Kubeadm.CreatePKI(); err != nil {
+		return err
+	}
+	if err := k.Kubeadm.CreateKubeConfig(); err != nil {
+		return err
+	}
+	if err := k.Kmm.CreateAndStartKubelet(true); err != nil {
+		return err
+	}
+	if err := k.Kubeadm.UpdateMasterRoleLabelsAndTaints(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// BootstrapOnce will carry out all the actions on a primary master
+// TODO: ensure these are all repeatable - blocked, see issue:
+//       https://github.com/UKHomeOffice/keto-k8/issues/33
+func (k *Config) BootstrapOnce() (assets string, err error) {
+	log.Printf("Bootstrapping master...")
+
+	// We can create the master assets here
+	if err = k.Kubeadm.CreatePKI(); err != nil {
+		return "", err
+	}
+	// Load assets off disk and serialise
+	assets, err = k.Kubeadm.LoadAndSerializeAssets()
+
+	// We have the assets but we must NOT proceed until we've finish bootstrapping / sharing...
+	if err = k.Kubeadm.CreateKubeConfig(); err != nil {
+		return "", err
+	}
+	if err = k.Kmm.CreateAndStartKubelet(true); err != nil {
+		return "", err
+	}
+	// Note: Addons will call the same underlying kubeadmapi UpdateMasterRoleLabelsAndTaints
+	if err = k.Kubeadm.Addons(); err != nil {
+		return "", err
+	}
+	if err = k.Kmm.InstallNetwork(); err != nil {
+		return "", err
+	}
+	if err = k.Kmm.TokensDeploy(); err != nil {
+		return "", err
+	}
+	log.Printf("Master bootstrapped!")
+	return assets, nil
+}
+
 // CleanUp - will optionally clean all etcd resources
-func CleanUp(cfg Config, releaseLock bool, deleteAssets bool) (err error) {
+func (k *Kmm) CleanUp(releaseLock, deleteAssets bool) (err error) {
 
 	if releaseLock {
 		log.Printf("Releasing lock...")
-		if err = etcd.Delete(cfg.KubeadmCfg.EtcdClientConfig, assetLockKey); err != nil {
+		if err = k.Etcd.Delete(assetLockKey); err != nil {
 			return err
 		}
 		log.Printf("Released lock")
 	}
 	if deleteAssets {
 		log.Printf("Releasing assets...")
-		if err = etcd.Delete(cfg.KubeadmCfg.EtcdClientConfig, assetKey); err != nil {
+		if err = k.Etcd.Delete(assetKey); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// InstallNetwork - Creates the network resources
-func InstallNetwork(networkProvider string) (err error) {
+// InstallNetwork will create the CNI network resources from a named template
+func (k *Kmm) InstallNetwork() (err error) {
 	var np network.Provider
-	if np, err = network.CreateProvider(networkProvider); err != nil {
+	if np, err = network.CreateProvider(k.NetworkProvider); err != nil {
 		return err
 	}
 	return np.Create()
 }
 
-// SetupCompute will configure a compute node - currently just saves an env file
-func SetupCompute(cloud string) (err error) {
-
-	cfg := Config{
-		KubeadmCfg: kubeadm.Config{
-			CloudProvider: cloud,
-		},
-	}
-	// Get data from cloud provider
-	if err = updateCloudCfg(&cfg); err != nil {
-		return err
-	}
-	if err = tokens.WriteKetoTokenEnv(cloud, cfg.KubeadmCfg.APIServer.String()); err != nil {
-		return fmt.Errorf("Error saving KetoTokenEnv:%q", err)
-	}
-	return CreateAndStartKubelet(cloud, cfg.KubeadmCfg.KubeVersion, false)
-}
-
-func bootstrapOnce(cfg Config) (assets string, err error) {
-
-	defer CleanUp(cfg, true, false)
-
-	// We can create the master assets here
-	if err = kubeadm.CreatePKI(cfg.KubeadmCfg); err != nil {
-		return "", err
-	}
-	log.Printf("Loading assets off disk...")
-	assets, err = kubeadm.GetAssets(cfg.KubeadmCfg)
-
-	// We have the assets but we must NOT proceed until we've finish bootstrapping / sharing...
-	if err = kubeadm.CreateKubeConfig(cfg.KubeadmCfg); err != nil {
-		return "", err
-	}
-	if err = CreateAndStartKubelet(cfg.KubeadmCfg.CloudProvider, cfg.KubeadmCfg.KubeVersion, true); err != nil {
-		return "", err
-	}
-	if err = kubeadm.Addons(cfg.KubeadmCfg); err != nil {
-		return "", err
-	}
-	if err = InstallNetwork(cfg.NetworkProvider); err != nil {
-		return "", err
-	}
-	if err = tokens.Deploy(cfg.ClusterName); err != nil {
-		return "", err
-	}
-	return assets, nil
-}
-
-// Copy Kube CA and link CA key to kubeadm expected locations (if not there already)
-func copyKubeCa(cfg Config) (err error) {
+// CopyKubeCa will copy Kube CA and link CA key to kubeadm expected locations (if not there already)
+func (k *Kmm) CopyKubeCa() (err error) {
 	// First check for CA file...
-	if _, err := os.Stat(cfg.KubePersistentCaCert); os.IsNotExist(err) {
-		return errors.New("Kube CA cert not found at:" + cfg.KubePersistentCaCert)
+	if _, err := os.Stat(k.KubePersistentCaCert); os.IsNotExist(err) {
+		return errors.New("Kube CA cert not found at:" + k.KubePersistentCaCert)
 	}
-	if _, err := os.Stat(cfg.KubePersistentCaKey); os.IsNotExist(err) {
-		return errors.New("Kube CA key not found at:" + cfg.KubePersistentCaKey)
+	if _, err := os.Stat(k.KubePersistentCaKey); os.IsNotExist(err) {
+		return errors.New("Kube CA key not found at:" + k.KubePersistentCaKey)
 	}
 	if _, err = os.Stat(kubeadm.PkiDir); os.IsNotExist(err) {
 		os.Mkdir(kubeadm.PkiDir, os.ModePerm)
 	}
 
-	err = fileutil.CopyFile(cfg.KubePersistentCaCert, kubeadm.CaCertFile)
+	err = fileutil.CopyFile(k.KubePersistentCaCert, kubeadm.CaCertFile)
 	if err != nil {
 		return err
 	}
-	err = fileutil.SymlinkFile(cfg.KubePersistentCaKey, kubeadm.CaKeyFile)
+	err = fileutil.SymlinkFile(k.KubePersistentCaKey, kubeadm.CaKeyFile)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// Update config based on cloud provider, if specified
-func updateCloudCfg(cfg *Config) (err error) {
+// TokensDeploy method calls the dependancy with the correct configuration
+// It allows the dependancy to be mocked.
+func (k *Kmm) TokensDeploy() error {
+	return tokens.Deploy(k.ClusterName)
+}
+
+// UpdateCloudCfg config based on cloud provider, if specified
+func (k *Kmm) UpdateCloudCfg() (err error) {
 	// Now get the cloud provider to get the kubeapi url and k8 version:
-	if cfg.KubeadmCfg.CloudProvider != "" {
+	if k.KubeadmCfg.CloudProvider != "" {
 		var node cloudprovider.Node
-		if node, err = getNodeInterface(cfg.KubeadmCfg.CloudProvider); err != nil {
+		if node, err = getNodeInterface(k.KubeadmCfg.CloudProvider); err != nil {
 			return err
 		}
 		var clusterName string
 		if clusterName, err = node.GetClusterName(); err != nil {
 			return fmt.Errorf("Error getting cluster name cloud provider:%q", err)
 		}
-		cfg.ClusterName = clusterName
+		k.ClusterName = clusterName
 		var api string
 		if api, err = node.GetKubeAPIURL(); err != nil {
 			return fmt.Errorf("Error getting Api server from cloud provider:%q", err)
@@ -235,17 +289,19 @@ func updateCloudCfg(cfg *Config) (err error) {
 			return fmt.Errorf("Error parsing Api server %s [%v]", api, err)
 		}
 		if len(api) > 0 {
-			cfg.KubeadmCfg.APIServer = url
+			k.KubeadmCfg.APIServer = url
 		} else {
 			// url.Parse seems to always parse without error!
 			return fmt.Errorf("Empty API server [%s] obtained from cloud provider", api)
 		}
-		if cfg.KubeadmCfg.KubeVersion, err = node.GetKubeVersion(); err != nil {
+		if k.KubeadmCfg.KubeVersion, err = node.GetKubeVersion(); err != nil {
 			return fmt.Errorf("Kubernetes version not specified from cloud provider [%v]", err)
 		}
-		if len(cfg.KubeadmCfg.KubeVersion) == 0 {
+		if len(k.KubeadmCfg.KubeVersion) == 0 {
 			return fmt.Errorf("Error parsing Api server %s", api)
 		}
+	} else {
+		log.Printf("No cloud provider specified - not loading...")
 	}
 
 	return nil

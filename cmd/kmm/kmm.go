@@ -17,11 +17,12 @@ limitations under the License.
 package main
 
 import (
+	"os"
 	"github.com/UKHomeOffice/keto-k8/pkg/kmm/cmd"
 	_ "github.com/UKHomeOffice/keto/pkg/cloudprovider/providers"
 )
 
 func main() {
 	cmd.Execute()
+	os.Exit(0)
 }
-

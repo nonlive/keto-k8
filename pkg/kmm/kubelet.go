@@ -8,23 +8,24 @@ import (
 	"path"
 	"text/template"
 
-	"github.com/coreos/go-systemd/dbus"
-	"github.com/UKHomeOffice/keto-k8/pkg/fileutil"
 	"github.com/UKHomeOffice/keto-k8/pkg/constants"
+	"github.com/UKHomeOffice/keto-k8/pkg/fileutil"
+	"github.com/coreos/go-systemd/dbus"
 )
 
 // CreateAndStartKubelet will create Kubelet
-func CreateAndStartKubelet(cloudProvider, kubeVersion string, master bool) error {
+// CreateAndStartKubelet will call the CreateAndStartKubelet method with the correct configuration
+func (k *Kmm) CreateAndStartKubelet(master bool) error {
 
 	// Render kubelet.service
 	data := struct {
-		CloudProviderName	string
-		KubeVersion			string
-		IsMaster			bool
+		CloudProviderName string
+		KubeVersion       string
+		IsMaster          bool
 	}{
-		CloudProviderName:	cloudProvider,
-		KubeVersion:		kubeVersion,
-		IsMaster:			master,
+		CloudProviderName: k.KubeadmCfg.CloudProvider,
+		KubeVersion:       k.KubeadmCfg.KubeVersion,
+		IsMaster:          master,
 	}
 	t := template.Must(template.New("kubeletUnit").Parse(kubeletTemplate))
 	var b bytes.Buffer
@@ -70,7 +71,7 @@ func CreateAndStartKubelet(cloudProvider, kubeVersion string, master bool) error
 	}
 	// Daemon-reload TODO: make reload unit specific
 	if err := conn.Reload(); err != nil {
-		return fmt.Errorf("Problem reloading systemd units after adding %q; [%v]",target, err)
+		return fmt.Errorf("Problem reloading systemd units after adding %q; [%v]", target, err)
 	}
 
 	// Start / restart unit

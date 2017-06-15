@@ -11,15 +11,26 @@ import (
 	"github.com/coreos/etcd/pkg/transport"
 )
 
-// TODO: rewrite a client interface (for testability)
+// TODO: Add mockable interface for testing this package without reference to specific clientV3 lib
 
-// ClientConfig - represents a controller configuration.
-type ClientConfig struct {
+// Client represents an etcd client configuration.
+type Client struct {
 	Endpoints			string
 	CaFileName			string
 	ClientCertFileName	string
 	ClientKeyFileName	string
 }
+
+// Clienter allows for mocking out this lib for testing
+type Clienter interface {
+	Get(key string) (value string, err error)
+	GetOrCreateLock(key string) (mylock bool, err error)
+	PutTx(key string, value string) (err error)
+	Delete(key string) (err error)
+}
+
+// Verify the implementation here satisfies the abstract interface
+var _ Clienter = (*Client)(nil)
 
 var (
 	// Timeout - For now a constant
@@ -29,13 +40,18 @@ var (
 	MaxTransactionTime = 120 * time.Second
 )
 
+// New creates a new etcd client from configuration
+func New(cfg Client) *Client {
+	return &cfg
+}
+
 // Get - Will return:
 // - The the string value for a given key if present
 // - Will return an err for all other occasions
-func Get(cfg ClientConfig, key string) (value string, err error) {
+func (c *Client) Get(key string) (value string, err error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
-	cli, err := getEtcdClient(cfg, Timeout)
+	cli, err := getEtcdClient(*c, Timeout)
 	if err != nil {
 		log.Printf("Error getting client:%q", err)
 		return "", err
@@ -60,18 +76,18 @@ func Get(cfg ClientConfig, key string) (value string, err error) {
 	return value, err
 }
 
-// GetLock - Will obtain a lock (true) if the first client to create lock
+// GetOrCreateLock obtains a lock (true) if the first client to create lock
 // If TTL expired, will obtain lock (reset TTL)
 // If TTL not expired will return false
-func GetLock(cfg ClientConfig, key string) (mylock bool, err error) {
+func (c *Client) GetOrCreateLock(key string) (mylock bool, err error) {
 	mylock = false
 
-	err = setLock(cfg, key)
+	err = c.SetLock(key)
 	if err != nil {
 		if err == ErrKeyAlreadyExists {
 			log.Printf("Lock allready created...")
 			// Need to check TTL and if required, transactionally re-create Lock..
-			mylock, err = tryRecreateLock(cfg, key)
+			mylock, err = c.TryRecreateLock(key)
 		}
 	} else {
 		log.Printf("Lock obtained...")
@@ -80,20 +96,21 @@ func GetLock(cfg ClientConfig, key string) (mylock bool, err error) {
 	return mylock, err
 }
 
-func setLock(cfg ClientConfig, key string) (err error) {
+// SetLock create an ETCD lock key with a TTL from now
+func (c *Client) SetLock(key string) (err error) {
 	now := time.Now()
 	ttl := now.Add(MaxTransactionTime)
 
 	// Try and create lock item with value of TTL
-	err = PutTx(cfg, key, ttl.Format(time.RFC3339))
+	err = c.PutTx(key, ttl.Format(time.RFC3339))
 	return err
 }
 
-// Will recreate a Lock IF TTL of existing lock has expired.
+// TryRecreateLock will recreate a Lock IF TTL of existing lock has expired.
 // Returns true if lock obtained (re-created as TTL expired)
-// Returns falue if existing lock still valid
-func tryRecreateLock(cfg ClientConfig, key string) (recreated bool, err error) {
-	othersTTLString, err := Get(cfg, key)
+// Returns false if existing lock still valid
+func (c *Client) TryRecreateLock(key string) (recreated bool, err error) {
+	othersTTLString, err := c.Get(key)
 	if err != nil {
 		// Shouldn't get this unless terminal...
 		log.Printf("Lock (key - %q) not obtained, Can't get key:%q", key, err)
@@ -105,11 +122,11 @@ func tryRecreateLock(cfg ClientConfig, key string) (recreated bool, err error) {
 		othersTTLString)
 	if e != nil {
 		// Error parsing lock, corrupt, overwrite and get lock
-		err = overWriteLock(cfg, key)
+		err = c.OverWriteLock(key)
 	} else {
 		// See if TTL has passed and we should assume lock...
 		if time.Now().After(otherTTLTime) {
-			err = overWriteLock(cfg, key)
+			err = c.OverWriteLock(key)
 		} else {
 			log.Printf("Lock (key - %q) not obtained, TTL exists:%q", key, othersTTLString)
 			return false, nil
@@ -118,12 +135,14 @@ func tryRecreateLock(cfg ClientConfig, key string) (recreated bool, err error) {
 	return false, err
 }
 
-func overWriteLock(cfg ClientConfig, key string) (err error) {
-	err = Delete(cfg, key)
+// OverWriteLock will delete and re-create a lock
+// TODO: this needs to be done as a transaction!
+func(c *Client) OverWriteLock(key string) (err error) {
+	err = c.Delete(key)
 	if err != nil {
 		log.Printf("Failed deleteing lock:%q", key)
 	}
-	err = setLock(cfg, key)
+	err = c.SetLock(key)
 	if err != nil {
 		log.Printf("Failed creating lock:%q", key)
 	}
@@ -131,9 +150,10 @@ func overWriteLock(cfg ClientConfig, key string) (err error) {
 }
 
 // Delete - will remove a key from etcd
-func Delete(cfg ClientConfig, key string) (err error) {
+func (c *Client) Delete(key string) (err error) {
+
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
-	cli, err := getEtcdClient(cfg, Timeout)
+	cli, err := getEtcdClient(*c, Timeout)
 	if err != nil {
 		return err
 	}
@@ -147,10 +167,10 @@ func Delete(cfg ClientConfig, key string) (err error) {
 // PutTx - Puts with a transaction (will NOT create new revision)
 // Will ensure only a single version is ever stored.
 // Returns error if key already existed
-func PutTx(cfg ClientConfig, key string, value string) (err error) {
+func (c *Client) PutTx(key string, value string) (err error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
-	cli, err := getEtcdClient(cfg, Timeout)
+	cli, err := getEtcdClient(*c, Timeout)
 	if err != nil {
 		return err
 	}
@@ -179,7 +199,7 @@ func PutTx(cfg ClientConfig, key string, value string) (err error) {
 	return err
 }
 
-func getEtcdClient(config ClientConfig, timeout time.Duration) (cli *clientv3.Client, err error) {
+func getEtcdClient(config Client, timeout time.Duration) (cli *clientv3.Client, err error) {
 
 	endPoints := strings.Split(config.Endpoints, ",")
 	cfg := clientv3.Config{
