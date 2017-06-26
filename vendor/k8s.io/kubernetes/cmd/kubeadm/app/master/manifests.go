@@ -66,8 +66,8 @@ func WriteStaticPodManifests(cfg *kubeadmapi.MasterConfiguration, masterCount ui
 	volumeMounts := []api.VolumeMount{k8sVolumeMount()}
 
 	if isCertsVolumeMountNeeded() {
-		volumes = append(volumes, certsVolume(cfg))
-		volumeMounts = append(volumeMounts, certsVolumeMount())
+		volumes = append(volumes, certsVolume(cfg), usrShareVolume())
+		volumeMounts = append(volumeMounts, certsVolumeMount(), usrShareVolumeMount())
 	}
 
 	if isPkiVolumeMountNeeded() {
@@ -219,7 +219,7 @@ func certsVolume(cfg *kubeadmapi.MasterConfiguration) api.Volume {
 		Name: "certs",
 		VolumeSource: api.VolumeSource{
 			// TODO(phase1+) make path configurable
-			HostPath: &api.HostPathVolumeSource{Path: "/etc/ssl/certs"},
+			HostPath: &api.HostPathVolumeSource{Path: "/etc/ssl"},
 		},
 	}
 }
@@ -227,13 +227,30 @@ func certsVolume(cfg *kubeadmapi.MasterConfiguration) api.Volume {
 func certsVolumeMount() api.VolumeMount {
 	return api.VolumeMount{
 		Name:      "certs",
-		MountPath: "/etc/ssl/certs",
+		MountPath: "/etc/ssl",
+	}
+}
+
+func usrShareVolume() api.Volume {
+	return api.Volume{
+		Name: "usr-share-certs",
+		VolumeSource: api.VolumeSource{
+			// TODO(phase1+) make path configurable
+			HostPath: &api.HostPathVolumeSource{Path: "/usr/share/ca-certificates"},
+		},
+	}
+}
+
+func usrShareVolumeMount() api.VolumeMount {
+	return api.VolumeMount{
+		Name:      "usr-share-certs",
+		MountPath: "/usr/share/ca-certificates",
 	}
 }
 
 func isPkiVolumeMountNeeded() bool {
-	// On some systems were we host-mount /etc/ssl/certs, it is also required to mount /etc/pki. This is needed
-	// due to symlinks pointing from files in /etc/ssl/certs into /etc/pki/
+	// On some systems were we host-mount /etc/ssl, it is also required to mount /etc/pki. This is needed
+	// due to symlinks pointing from files in /etc/ssl into /etc/pki/
 	if _, err := os.Stat("/etc/pki"); err == nil {
 		return true
 	}
