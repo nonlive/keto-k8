@@ -15,14 +15,14 @@ import (
 
 // ServerConfig - Params for configuring an etcd cluster
 type ServerConfig struct {
-	CaKeyFileName		string
-	ServerCertFileName	string
-	ServerKeyFileName	string
-	PeerCertFileName	string
-	PeerKeyFileName		string
-	LocalHostNames		[]string
-	ClusterHostNames	[]string
-	ClientConfig		ClientConfig
+	CaKeyFileName      string
+	ServerCertFileName string
+	ServerKeyFileName  string
+	PeerCertFileName   string
+	PeerKeyFileName    string
+	LocalHostNames     []string
+	ClusterHostNames   []string
+	ClientConfig       Client
 }
 
 // ExtKeyUsage - contains a mapping of string names to extended key

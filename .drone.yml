@@ -13,8 +13,10 @@ pipeline:
       # We have some patched files to use this successfully - until PR's in
       - git checkout vendor/k8s.io/kubernetes/cmd/kubeadm
       - go get -u github.com/golang/lint/golint
-      - golint $(go list ./... | grep -v /vendor)
+      - golint $(go list ./... | grep -v /vendor | grep -v /mocks)
       - go vet $(go list ./... | grep -v /vendor)
+      - go get github.com/vektra/mockery/.../
+      - go generate $(go list ./... | grep -v /vendor)
       - go test -cover $(go list ./... | grep -v /vendor)
       - go build $(go list ./... | grep -v /vendor)
       - CGO_ENABLED=0 go build -a -v github.com/${DRONE_REPO}/cmd/kmm

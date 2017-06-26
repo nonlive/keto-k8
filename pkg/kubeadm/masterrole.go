@@ -10,7 +10,7 @@ import (
 )
 
 // UpdateMasterRoleLabelsAndTaints will apply the master role taints and labels
-func UpdateMasterRoleLabelsAndTaints(kmmCfg Config) error {
+func (cfg *Config) UpdateMasterRoleLabelsAndTaints() error {
 
 	adminKubeConfigPath := path.Join(kubeadmapi.GlobalEnvParams.KubernetesDir, kubeadmconstants.AdminKubeConfigFileName)
 	client, err := kubemaster.CreateClientAndWaitForAPI(adminKubeConfigPath)

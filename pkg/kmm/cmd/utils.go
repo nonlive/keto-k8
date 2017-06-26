@@ -15,9 +15,9 @@ import (
 const EtcdCertsCmdName string = "etcdcerts"
 
 // Will validate flags and exit if invalid...
-func getEtcdClientConfig(cmd *cobra.Command) (cfg etcd.ClientConfig, err error) {
+func getEtcdClientConfig(cmd *cobra.Command) (cfg etcd.Client, err error) {
 
-	etcdConfig := etcd.ClientConfig{
+	etcdConfig := etcd.Client{
 		Endpoints:			cmd.Flag("etcd-endpoints").Value.String(),
 		CaFileName: 		cmd.Flag("etcd-client-ca").Value.String(),
 		ClientCertFileName:	cmd.Flag("etcd-client-cert").Value.String(),

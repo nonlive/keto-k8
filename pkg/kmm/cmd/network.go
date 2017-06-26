@@ -17,7 +17,10 @@ var networkCmd = &cobra.Command{
 }
 
 func installNetwork(c *cobra.Command) {
-	err := kmm.InstallNetwork(c.Flag("network-provider").Value.String())
+	kmmCfg := kmm.Config{}
+	kmmCfg.NetworkProvider = c.Flag("network-provider").Value.String()
+	k := kmm.New(kmmCfg)
+	err := k.Kmm.InstallNetwork()
 	if err != nil {
 		log.Fatal(err)
 	}

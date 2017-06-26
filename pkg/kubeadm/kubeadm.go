@@ -23,6 +23,8 @@ import (
 	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm/pkiutil"
 )
 
+// TODO: Add mockable interface for testing this package without reference to the real kubeadm
+
 const cmdKubeadm string = "kubeadm"
 
 var (
@@ -41,15 +43,15 @@ var (
 
 // Config  represents runtime params cfg structure.
 type Config struct {
-	EtcdClientConfig etcd.ClientConfig
-	CaCert           string
-	CaKey            string
-	APIServer        *url.URL
-	KubeletID        string
-	CloudProvider    string
-	KubeVersion      string
-	MasterCount      uint
-	PodNetworkCidr   string
+	EtcdClientConfig	etcd.Client
+	CaCert				string
+	CaKey				string
+	APIServer			*url.URL
+	KubeletID			string
+	CloudProvider		string
+	KubeVersion			string
+	MasterCount			uint
+	PodNetworkCidr		string
 }
 
 // SharedAssets - the data to be shared between all kubernetes masters
@@ -60,9 +62,23 @@ type SharedAssets struct {
 	SaKey			string
 }
 
-// GetAssets - For getting assets off disk
+// Kubeadmer allows for mocking out this lib for testing
+type Kubeadmer interface {
+	Addons() (error)
+	CreateKubeConfig() (err error)
+	CreatePKI() (err error)
+	LoadAndSerializeAssets() (assets string, err error)
+	SaveAssets(assets string) (err error)
+	UpdateMasterRoleLabelsAndTaints() error
+	WriteManifests() (err error)
+}
+
+// verify the concrete implementation satisfies the abstract interface
+var _ Kubeadmer = (*Config)(nil)
+
+// LoadAndSerializeAssets getting assets off disk into a serialized string
 // Return an error if there are no assets (and empty string)
-func GetAssets(cfg Config) (assets string, err error) {
+func (k *Config) LoadAndSerializeAssets() (assets string, err error) {
 	assets = ""
 
 	var saPub *rsa.PublicKey
@@ -105,7 +121,7 @@ func GetAssets(cfg Config) (assets string, err error) {
 }
 
 // SaveAssets - will persist assets to disk
-func SaveAssets(cfg Config, assets string) (err error) {
+func (k *Config) SaveAssets(assets string) (err error) {
 	pkiDir := PkiDir + "/"
 	sharedAssets := SharedAssets{}
 	json.Unmarshal([]byte(assets), &sharedAssets)
@@ -132,36 +148,36 @@ func SaveAssets(cfg Config, assets string) (err error) {
 }
 
 // CreatePKI - generates all PKI assests on to disk
-func CreatePKI(cfg Config) (err error) {
+func (k *Config) CreatePKI() (err error) {
 	var apiHost string
-	if apiHost, _, err = net.SplitHostPort(cfg.APIServer.Host) ; err != nil {
+	if apiHost, _, err = net.SplitHostPort(k.APIServer.Host) ; err != nil {
 		return err
 	}
 	log.Printf("Using host:%q", apiHost)
 	args := append(cmdOptsCerts, apiHost)
-	kubeadmOut, err := runKubeadm(cfg, args)
+	kubeadmOut, err := runKubeadm(*k, args)
 	log.Printf("Output:\n" + kubeadmOut)
 	return err
 }
 
 // CreateKubeConfig - Creates all the kubeconfig files requires for masters
-func CreateKubeConfig(cfg Config) (err error) {
-	if err = createAKubeCfg(cfg, kubeadmconstants.AdminKubeConfigFileName,
+func (k *Config) CreateKubeConfig() (err error) {
+	if err = createAKubeCfg(*k, kubeadmconstants.AdminKubeConfigFileName,
 		"kubernetes-admin", kubeadmconstants.MastersGroup); err != nil {
 
 		return err
 	}
-	if err = createAKubeCfg(cfg, kubeadmconstants.KubeletKubeConfigFileName,
-		"system:node:" + cfg.KubeletID, kubeadmconstants.NodesGroup); err != nil {
+	if err = createAKubeCfg(*k, kubeadmconstants.KubeletKubeConfigFileName,
+		"system:node:" + k.KubeletID, kubeadmconstants.NodesGroup); err != nil {
 
 		return err
 	}
-	if err = createAKubeCfg(cfg, kubeadmconstants.ControllerManagerKubeConfigFileName,
+	if err = createAKubeCfg(*k, kubeadmconstants.ControllerManagerKubeConfigFileName,
 		kubeadmconstants.ControllerManagerUser, ""); err != nil {
 
 		return err
 	}
-	if err = createAKubeCfg(cfg, kubeadmconstants.SchedulerKubeConfigFileName,
+	if err = createAKubeCfg(*k, kubeadmconstants.SchedulerKubeConfigFileName,
 		kubeadmconstants.SchedulerUser, ""); err != nil {
 		return err
 	}

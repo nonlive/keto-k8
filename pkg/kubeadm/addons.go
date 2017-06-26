@@ -11,9 +11,7 @@ import (
 )
 
 // Addons - deploys the essential addons
-// TODO: should update these
-// TODO: use kubeadm directly
-func Addons(kmmCfg Config) error {
+func (k *Config) Addons() error {
 
 	adminKubeConfigPath := path.Join(kubeadmapi.GlobalEnvParams.KubernetesDir, kubeadmconstants.AdminKubeConfigFileName)
 	client, err := kubemaster.CreateClientAndWaitForAPI(adminKubeConfigPath)
@@ -38,12 +36,12 @@ func Addons(kmmCfg Config) error {
 		return err
 	}
 
-	var cfg *kubeadmapi.MasterConfiguration
-	if cfg, err = GetKubeadmCfg(kmmCfg); err != nil {
+	var kubeadmapiCfg *kubeadmapi.MasterConfiguration
+	if kubeadmapiCfg, err = GetKubeadmCfg(*k); err != nil {
 		return err
 	}
 
-	if err := addonsphase.CreateEssentialAddons(cfg, client); err != nil {
+	if err := addonsphase.CreateEssentialAddons(kubeadmapiCfg, client); err != nil {
 		return err
 	}
 	return nil

@@ -6,11 +6,11 @@ import (
 )
 
 // WriteManifests - will save kubernetes master manifests from kmm config struct
-func WriteManifests(kubeadmCfg Config) (err error) {
+func (k *Config) WriteManifests() (err error) {
 	// Get config into kubeadm format
-	var cfg *kubeadmapi.MasterConfiguration
-	if cfg, err = GetKubeadmCfg(kubeadmCfg); err != nil {
+	var kubeadmapiCfg *kubeadmapi.MasterConfiguration
+	if kubeadmapiCfg, err = GetKubeadmCfg(*k); err != nil {
 		return err
 	}
-	return master.WriteStaticPodManifests(cfg, kubeadmCfg.MasterCount)
+	return master.WriteStaticPodManifests(kubeadmapiCfg, k.MasterCount)
 }

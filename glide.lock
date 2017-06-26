@@ -1,5 +1,5 @@
 hash: 365fd1813d55c499fa8f44a1d752544e2a6d026a2615d7881b8e7a8d40f47486
-updated: 2017-05-25T14:57:02.060526513+01:00
+updated: 2017-06-14T10:39:14.443215059+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -62,6 +62,10 @@ imports:
   - key
   - oauth2
   - oidc
+- name: github.com/coreos/go-systemd
+  version: 4484981625c1a6a2ecb40a390fcb6a9bcfee76e3
+  subpackages:
+  - dbus
 - name: github.com/coreos/pkg
   version: fa29b1d70f0beaddd4c7021607cc3c3be8ce94b8
   subpackages:
@@ -124,6 +128,8 @@ imports:
   version: 6aced65f8501fe1217321abf0749d354824ba2ff
 - name: github.com/go-openapi/swag
   version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
+- name: github.com/godbus/dbus
+  version: 012f3c27dcbdbe5d1285634e604e4ef869d83f7d
 - name: github.com/gogo/protobuf
   version: e18d7aa8f8c624c915db340349aad4c49b10d173
   subpackages:

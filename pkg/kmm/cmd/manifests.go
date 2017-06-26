@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"os"
-
 	log "github.com/Sirupsen/logrus"
-	"github.com/UKHomeOffice/keto-k8/pkg/kmm"
 	"github.com/spf13/cobra"
 )
 
@@ -20,12 +17,14 @@ var manifestsCmd = &cobra.Command{
 
 func manifests(c *cobra.Command) {
 	cfg, err := getKmmConfig(c)
-	if err == nil {
-		err = kmm.Manifests(cfg.KubeadmCfg)
-	}
 	if err != nil {
 		log.Fatal(err)
-		os.Exit(-1)
+	}
+	if err = cfg.Kmm.UpdateCloudCfg(); err != nil {
+		log.Fatal(err)
+	}
+	if err = cfg.Kubeadm.WriteManifests(); err != nil {
+		log.Fatal(err)
 	}
 }
 
