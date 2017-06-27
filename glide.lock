@@ -1,5 +1,5 @@
-hash: 365fd1813d55c499fa8f44a1d752544e2a6d026a2615d7881b8e7a8d40f47486
-updated: 2017-06-14T10:39:14.443215059+01:00
+hash: f90db19eca1be914b68cbd58e31bae5fad39fcf10370e19f61a711cbb4f773d4
+updated: 2017-06-27T10:49:51.688560836+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -44,7 +44,7 @@ imports:
 - name: github.com/blang/semver
   version: 31b736133b98f26d5e078ec9eb591666edfd091f
 - name: github.com/coreos/etcd
-  version: 7e6d876385396bf3ea8f1b58ab24b697a3d9f5d8
+  version: 61fc123e7a8b14a0a258aa3f5c4159861b1ec2e7
   subpackages:
   - auth/authpb
   - clientv3
@@ -188,6 +188,10 @@ imports:
   - libcontainer/utils
 - name: github.com/pborman/uuid
   version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
@@ -200,6 +204,13 @@ imports:
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: github.com/spf13/viper
   version: 5d46e70da8c0b6f812e0b170b7a985753b5c63cb
+- name: github.com/stretchr/objx
+  version: cbeaeb16a013161a98496fad62933b1d21786672
+- name: github.com/stretchr/testify
+  version: e3a8ff8ce36581f87a15341206f205b1da467059
+  subpackages:
+  - assert
+  - mock
 - name: github.com/ugorji/go
   version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
   subpackages:
@@ -437,7 +448,7 @@ imports:
   - util/integer
   - util/jsonpath
 - name: k8s.io/kubernetes
-  version: d6f433224538d4f9ca2f7ae19b252e6fcb66a3ae
+  version: 7fa1c1756d8bc963f1a389f4a6937dc71f08ada2
   subpackages:
   - cmd/kubeadm/app/apis/kubeadm
   - cmd/kubeadm/app/constants
@@ -579,6 +590,8 @@ imports:
   - test/e2e_node/system
 - name: vbom.ml/util
   version: db5cfe13f5cc80a4990d98e2e1b0707a4d1a5394
+  repo: https://github.com/fvbommel/util.git
+  vcs: git
   subpackages:
   - sortorder
 testImports: []
