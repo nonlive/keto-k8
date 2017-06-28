@@ -17,7 +17,11 @@ var computeCmd = &cobra.Command{
 }
 
 func setupCompute(c *cobra.Command) {
-	err := kmm.SetupCompute(c.Flag("cloud-provider").Value.String())
+	exitOnCompletion, _ := c.Flags().GetBool(ExitOnCompletionFlagName)
+	err := kmm.SetupCompute(
+		c.Flag("cloud-provider").Value.String(),
+		exitOnCompletion,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}

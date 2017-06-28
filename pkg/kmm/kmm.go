@@ -57,10 +57,13 @@ type Kmm struct {
 }
 
 // SetupCompute will configure a compute node - currently just saves an env file
-func SetupCompute(cloud string) (err error) {
+func SetupCompute(cloud string, exitOnCompletion bool) (err error) {
 
 	cfg := Config{}
-	cfg.KubeadmCfg.CloudProvider = cloud
+	cfg.ConfigType.ExitOnCompletion = exitOnCompletion
+	cfg.ConfigType.KubeadmCfg = &kubeadm.Config{
+		CloudProvider:	cloud,
+	}
 	k := New(cfg)
 	// Get data from cloud provider
 	if err = k.Kmm.UpdateCloudCfg(); err != nil {
@@ -70,7 +73,14 @@ func SetupCompute(cloud string) (err error) {
 	if err = tokens.WriteKetoTokenEnv(cloud, cfg.KubeadmCfg.APIServer.String()); err != nil {
 		return fmt.Errorf("Error saving KetoTokenEnv:%q", err)
 	}
-	return k.Kmm.CreateAndStartKubelet(false)
+
+	k.Kmm.CreateAndStartKubelet(false)
+
+	log.Printf("Compute bootstrapped")
+	if ! k.ExitOnCompletion {
+		for true {}
+	}
+	return nil
 }
 
 // New creates a new kmm struct with live interface from configuration
