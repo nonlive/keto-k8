@@ -60,7 +60,9 @@ type Kmm struct {
 func SetupCompute(cloud string) (err error) {
 
 	cfg := Config{}
-	cfg.KubeadmCfg.CloudProvider = cloud
+	cfg.ConfigType.KubeadmCfg = &kubeadm.Config{
+		CloudProvider:	cloud,
+	}
 	k := New(cfg)
 	// Get data from cloud provider
 	if err = k.Kmm.UpdateCloudCfg(); err != nil {
