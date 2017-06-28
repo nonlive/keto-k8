@@ -51,7 +51,7 @@ func TestGet(t *testing.T) {
 		t.Error(fmt.Errorf("expected no error but got %q", err))
 	} else {
 		if value != testGetValue {
-			t.Error("expected %q when getting %q but got %q", testGetValue, testGetKey, value)
+			t.Error(fmt.Errorf("expected %q when getting %q but got %q", testGetValue, testGetKey, value))
 		}
 	}
 }
@@ -106,7 +106,7 @@ func TestPutTx(t *testing.T) {
 		t.Error(fmt.Errorf("did not manage PutTx() got error:%q", err))
 	} else {
 		if value, _ := e.Get(testPutTxKey); value != testPutTxValue {
-			t.Error(fmt.Errorf("expected %q but got %q", testPutTxValue, ))
+			t.Error(fmt.Errorf("expected %q but got %q", testPutTxValue, value))
 		}
 	}
 
@@ -115,7 +115,7 @@ func TestPutTx(t *testing.T) {
 		t.Error(fmt.Errorf("did not get expected error, got:%q", err))
 	} else {
 		if value, _ := e.Get(testPutTxKey); value != testPutTxValue {
-			t.Error(fmt.Errorf("expected %q but got %q", testPutTxValue, ))
+			t.Error(fmt.Errorf("expected %q but got %q", testPutTxValue, value))
 		}
 	}
 
@@ -124,8 +124,8 @@ func TestPutTx(t *testing.T) {
 
 func TestGetOrCreateLock(t *testing.T) {
 	const testGetOrCreateLockKey string = "testgetorcreatelock"
-	var testLongGetOrCreateLockTTL time.Duration = 120 * time.Second
-	var testShortGetOrCreateLockTTL time.Duration = 1 * time.Second
+	var testLongGetOrCreateLockTTL = 120 * time.Second
+	var testShortGetOrCreateLockTTL = 1 * time.Second
 
 	if testing.Short() {
 		t.Skip("skipping integration test")

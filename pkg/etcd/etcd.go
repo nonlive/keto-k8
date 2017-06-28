@@ -56,7 +56,6 @@ func (c *Client) Get(key string) (value string, err error) {
 	}
 	defer cli.Close()
 
-	log.Printf("Getting %q key value...", key)
 	getresp, err := cli.Get(ctx, key)
 	if err != nil {
 		return "", err
@@ -100,7 +99,7 @@ func (c *Client) GetOrCreateLock(key string, lockKeyTTL time.Duration) (mylock b
 // SetLock create an ETCD lock key with a TTL from now
 func (c *Client) SetLock(key string) (err error) {
 	now := time.Now()
-	ttl := now.Add(MaxTransactionTime)
+	ttl := now.Add(c.LockTTL)
 
 	// Try and create lock item with value of TTL
 	err = c.PutTx(key, ttl.Format(time.RFC3339))
@@ -117,23 +116,30 @@ func (c *Client) TryRecreateLock(key string) (recreated bool, err error) {
 		log.Printf("Lock (key - %q) not obtained, Can't get key:%q", key, err)
 		return false, err
 	}
+
 	// We have old TTL - parse it
 	otherTTLTime, e := time.Parse(
 		time.RFC3339,
 		othersTTLString)
 	if e != nil {
 		// Error parsing lock, corrupt, overwrite and get lock
-		err = c.OverWriteLock(key)
-	} else {
-		// See if TTL has passed and we should assume lock...
-		if time.Now().After(otherTTLTime) {
-			err = c.OverWriteLock(key)
-		} else {
-			log.Printf("Lock (key - %q) not obtained, TTL exists:%q", key, othersTTLString)
-			return false, nil
+		log.Printf("Error parsing lock:%q, error:%q", othersTTLString, e)
+		if err := c.OverWriteLock(key); err != nil {
+			return false, err
 		}
+		return true, nil
 	}
-	return false, err
+	// See if TTL has passed and we should assume lock...
+	now := time.Now();
+	if now.After(otherTTLTime) {
+		log.Printf("TTL exists but time passed so overwriting")
+		if err := c.OverWriteLock(key); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+	log.Printf("Lock (key - %q) not obtained, TTL exists:%q", key, othersTTLString)
+	return false, nil
 }
 
 // OverWriteLock will delete and re-create a lock

@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// MasterSubCommand is the sub command syntax
 const MasterSubCommand string = "master"
 
 // cleanupCmd represents the version command
