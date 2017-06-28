@@ -15,16 +15,17 @@ import (
 
 // Client represents an etcd client configuration.
 type Client struct {
-	Endpoints			string
-	CaFileName			string
+	Endpoints		string
+	CaFileName		string
 	ClientCertFileName	string
 	ClientKeyFileName	string
+	LockTTL			time.Duration
 }
 
 // Clienter allows for mocking out this lib for testing
 type Clienter interface {
 	Get(key string) (value string, err error)
-	GetOrCreateLock(key string) (mylock bool, err error)
+	GetOrCreateLock(key string, lockKeyTTL time.Duration) (mylock bool, err error)
 	PutTx(key string, value string) (err error)
 	Delete(key string) (err error)
 }
@@ -35,9 +36,6 @@ var _ Clienter = (*Client)(nil)
 var (
 	// Timeout - For now a constant
 	Timeout = 5 * time.Second
-
-	// MaxTransactionTime - Also a constant - for now
-	MaxTransactionTime = 120 * time.Second
 )
 
 // New creates a new etcd client from configuration
@@ -79,8 +77,11 @@ func (c *Client) Get(key string) (value string, err error) {
 // GetOrCreateLock obtains a lock (true) if the first client to create lock
 // If TTL expired, will obtain lock (reset TTL)
 // If TTL not expired will return false
-func (c *Client) GetOrCreateLock(key string) (mylock bool, err error) {
+func (c *Client) GetOrCreateLock(key string, lockKeyTTL time.Duration) (mylock bool, err error) {
 	mylock = false
+
+	// TODO: make this a hash for each key (not needed for current use cases)
+	c.LockTTL = lockKeyTTL
 
 	err = c.SetLock(key)
 	if err != nil {
