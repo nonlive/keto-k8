@@ -57,12 +57,12 @@ type Kmm struct {
 }
 
 // SetupCompute will configure a compute node - currently just saves an env file
-func SetupCompute(cloud string) (err error) {
+func SetupCompute(cloud string, exitOnCompletion bool) (err error) {
 
 	cfg := Config{}
+	cfg.ConfigType.ExitOnCompletion = exitOnCompletion
 	cfg.ConfigType.KubeadmCfg = &kubeadm.Config{
-		CloudProvider:		cloud,
-		ExitOnCompletion:	false,
+		CloudProvider:	cloud,
 	}
 	k := New(cfg)
 	// Get data from cloud provider
