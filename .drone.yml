@@ -25,6 +25,8 @@ pipeline:
       - tar -xzf docker.tgz
       - mv ./docker/docker /usr/local/sbin/
       - go generate $(go list ./... | grep -v /vendor)
+      # We need kubeadm for integration tests
+      - ./bin/docker_downloads.sh
       - go test -cover $(go list ./... | grep -v /vendor)
       - go build $(go list ./... | grep -v /vendor)
       - CGO_ENABLED=0 go build -a -v github.com/${DRONE_REPO}/cmd/kmm
