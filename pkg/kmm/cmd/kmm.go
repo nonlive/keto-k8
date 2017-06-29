@@ -12,6 +12,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const ExitOnCompletionFlagName string = "exit-on-completion"
+
 var (
 	// RootCmd represents the base command when called without any subcommands
 	RootCmd = &cobra.Command{
@@ -85,17 +87,16 @@ func init() {
 		getDefaultFromEnvs([]string{"KMM_ETCD_CLUSTER_HOSTNAMES"}, ""),
 		"ETCD hostnames (defaults: KMM_ETCD_CLUSTER_HOSTNAMES or parsed from ETCD_INITIAL_CLUSTER)")
 	RootCmd.PersistentFlags().String("network-provider", "flannel", "Network Provider (flannel / weave / canal)")
+	RootCmd.PersistentFlags().Bool(
+		ExitOnCompletionFlagName,
+		false,
+		"Will exit after initializing master / compute (default is false - to remain loaded as service)")
+
 }
 
 // Will return a valid Kmm.Config object for the relevant flags...
 func getKmmConfig(cmd *cobra.Command) (cfg kmm.Config, err error) {
 
-	var exitOnCompletion bool
-	if cmd.Flag(ExitOnCompletionFlagName) != nil {
-		exitOnCompletion, _ = cmd.Flags().GetBool(ExitOnCompletionFlagName)
-	} else {
-		exitOnCompletion = true
-	}
 	etcdConfig, err := getEtcdClientConfig(cmd)
 	if err != nil {
 		return cfg, err
@@ -120,6 +121,8 @@ func getKmmConfig(cmd *cobra.Command) (cfg kmm.Config, err error) {
 		EtcdClientConfig: etcdConfig,
 		MasterCount:      uint(len(masterHosts)),
 	}
+	// False is default if not parsed
+	exitOnCompletion, _ := cmd.Flags().GetBool(ExitOnCompletionFlagName)
 	cfg = kmm.Config{
 		ConfigType: kmm.ConfigType{
 			KubeadmCfg:           &kubeadmConfig,

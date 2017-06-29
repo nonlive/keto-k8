@@ -8,7 +8,6 @@ import (
 )
 
 const MasterSubCommand string = "master"
-const ExitOnCompletionFlagName string = "exit-on-completion"
 
 // cleanupCmd represents the version command
 var masterCmd = &cobra.Command{
@@ -34,9 +33,5 @@ func runKmm(c *cobra.Command) {
 }
 
 func init() {
-	masterCmd.Flags().Bool(
-		ExitOnCompletionFlagName,
-		false,
-		"Will exit after initializing master (default is to remain loaded as service)")
 	RootCmd.AddCommand(masterCmd)
 }
