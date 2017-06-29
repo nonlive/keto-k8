@@ -1,25 +1,25 @@
 package etcd
 
 import (
-	"time"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"golang.org/x/net/context"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/clientv3util"
 	"github.com/coreos/etcd/pkg/transport"
+	"golang.org/x/net/context"
 )
 
 // TODO: Add mockable interface for testing this package without reference to specific clientV3 lib
 
 // Client represents an etcd client configuration.
 type Client struct {
-	Endpoints		string
-	CaFileName		string
-	ClientCertFileName	string
-	ClientKeyFileName	string
-	LockTTL			time.Duration
+	Endpoints          string
+	CaFileName         string
+	ClientCertFileName string
+	ClientKeyFileName  string
+	LockTTL            time.Duration
 }
 
 // Clienter allows for mocking out this lib for testing
@@ -130,7 +130,7 @@ func (c *Client) TryRecreateLock(key string) (recreated bool, err error) {
 		return true, nil
 	}
 	// See if TTL has passed and we should assume lock...
-	now := time.Now();
+	now := time.Now()
 	if now.After(otherTTLTime) {
 		log.Printf("TTL exists but time passed so overwriting")
 		if err := c.OverWriteLock(key); err != nil {
@@ -144,7 +144,7 @@ func (c *Client) TryRecreateLock(key string) (recreated bool, err error) {
 
 // OverWriteLock will delete and re-create a lock
 // TODO: this needs to be done as a transaction!
-func(c *Client) OverWriteLock(key string) (err error) {
+func (c *Client) OverWriteLock(key string) (err error) {
 	err = c.Delete(key)
 	if err != nil {
 		log.Printf("Failed deleteing lock:%q", key)
@@ -190,13 +190,13 @@ func (c *Client) PutTx(key string, value string) (err error) {
 	// the existing key which would generate potentially unwanted events,
 	// unless of course you wanted to do an overwrite no matter what.
 	txRet, err := kvc.Txn(ctx).
-	If(clientv3util.KeyMissing(key)).
-	Then(clientv3.OpPut(key, value)).
-	Commit()
+		If(clientv3util.KeyMissing(key)).
+		Then(clientv3.OpPut(key, value)).
+		Commit()
 
 	cancel() // context
 
-	if ! txRet.Succeeded {
+	if !txRet.Succeeded {
 		// We didn't create the lock - indicate with dedicated error:
 		log.Printf("Transaction didn't succeed - we didn't create lock!")
 		err = ErrKeyAlreadyExists

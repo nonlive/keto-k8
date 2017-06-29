@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"net"
 
-	certutil "github.com/UKHomeOffice/keto-k8/pkg/client-go/util/cert"
 	log "github.com/Sirupsen/logrus"
+	certutil "github.com/UKHomeOffice/keto-k8/pkg/client-go/util/cert"
 
-	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm/pkiutil"
 	"github.com/UKHomeOffice/keto-k8/pkg/fileutil"
+	"github.com/UKHomeOffice/keto-k8/pkg/kubeadm/pkiutil"
 )
 
 // ServerConfig - Params for configuring an etcd cluster
@@ -75,7 +75,7 @@ func GenCerts(cfg ServerConfig) (err error) {
 	serverCertCfg := certutil.Config{
 		CommonName: cfg.ClusterHostNames[0],
 		AltNames:   getAltNames(cfg.ClusterHostNames),
-		Usages:     []x509.ExtKeyUsage{
+		Usages: []x509.ExtKeyUsage{
 			ExtKeyUsage["server auth"],
 		},
 	}
@@ -93,7 +93,7 @@ func GenCerts(cfg ServerConfig) (err error) {
 	peerCertCfg := certutil.Config{
 		CommonName: cfg.ClusterHostNames[0],
 		AltNames:   getAltNames(cfg.LocalHostNames),
-		Usages:     []x509.ExtKeyUsage{
+		Usages: []x509.ExtKeyUsage{
 			ExtKeyUsage["server auth"],
 			ExtKeyUsage["client auth"],
 		},
@@ -111,7 +111,7 @@ func GenCerts(cfg ServerConfig) (err error) {
 	// Generate ETCD client certs
 	clientCertCfg := certutil.Config{
 		CommonName: cfg.ClusterHostNames[0],
-		Usages:     []x509.ExtKeyUsage{
+		Usages: []x509.ExtKeyUsage{
 			ExtKeyUsage["client auth"],
 		},
 	}
@@ -127,7 +127,7 @@ func GenCerts(cfg ServerConfig) (err error) {
 	return err
 }
 
-func checkOrCreateCert(certFile, keyFile string, caCert *x509.Certificate, caKey *rsa.PrivateKey, config certutil.Config) (error) {
+func checkOrCreateCert(certFile, keyFile string, caCert *x509.Certificate, caKey *rsa.PrivateKey, config certutil.Config) error {
 	if fileutil.ExistFile(certFile) && fileutil.ExistFile(keyFile) {
 		// Try to load cert and key...
 		cert, err := pkiutil.TryLoadAnyCertFromDisk(certFile)
@@ -150,7 +150,7 @@ func checkOrCreateCert(certFile, keyFile string, caCert *x509.Certificate, caKey
 			return fmt.Errorf("failure while saving certificate %q [%v]", certFile, err)
 		}
 		if err = certutil.WriteKey(keyFile, certutil.EncodePrivateKeyPEM(key)); err != nil {
-			return fmt.Errorf("failure while saving key %q [%v]",keyFile, err)
+			return fmt.Errorf("failure while saving key %q [%v]", keyFile, err)
 		}
 		log.Printf("Generated cert %q.", certFile)
 		log.Printf("Generated key %q.", keyFile)

@@ -23,4 +23,3 @@ func (cfg *Config) UpdateMasterRoleLabelsAndTaints() error {
 	}
 	return nil
 }
-

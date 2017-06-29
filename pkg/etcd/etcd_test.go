@@ -5,9 +5,9 @@ package etcd
 import (
 	"fmt"
 	"log"
-	"path"
 	"os"
 	"os/exec"
+	"path"
 	"testing"
 	"time"
 
@@ -90,7 +90,7 @@ func TestDelete(t *testing.T) {
 
 func TestPutTx(t *testing.T) {
 	const testPutTxKey string = "testputtx"
-	const testPutTxValue string  = "valueofaputtx"
+	const testPutTxValue string = "valueofaputtx"
 
 	if testing.Short() {
 		t.Skip("skipping integration test")
@@ -207,7 +207,7 @@ func getClientCfg() Client {
 	}
 }
 
-func getPath(relPath string) (string) {
+func getPath(relPath string) string {
 	wdPath, _ := os.Getwd()
 	return path.Clean(wdPath + "/../../" + relPath)
 }
