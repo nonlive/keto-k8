@@ -110,7 +110,7 @@ func getKubeadmCfg() (*Config, error) {
 	if a[0] != "K8S_VERSION" {
 		return nil, fmt.Errorf("Invalid source string (missing K8_VERSION=) in file:%q", k8versionfile)
 	}
-	url, _ := url.Parse("https://noserver.com:6443")
+	url, _ := url.Parse("https://localhost:6443")
 	k8Version := strings.TrimSpace(a[1])
 	return &Config{
 		EtcdClientConfig: etcd.Client{
