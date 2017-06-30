@@ -28,43 +28,43 @@ import (
 const cmdKubeadm string = "kubeadm"
 
 var (
-	cmdOptsCerts = []string {"alpha", "phase", "certs", "selfsign", "--cert-altnames"}
-	cmdOptsKubeconfig = []string {"alpha", "phase", "kubeconfig", "client-certs"}
+	cmdOptsCerts      = []string{"alpha", "phase", "certs", "selfsign", "--cert-altnames"}
+	cmdOptsKubeconfig = []string{"alpha", "phase", "kubeconfig", "client-certs"}
 
 	// PkiDir - The directory kubeadm will store all pki assets
-	PkiDir string 		= kubeadmconstants.KubernetesDir + "/pki"
+	PkiDir string = kubeadmconstants.KubernetesDir + "/pki"
 
 	// CaCertFile the name of the Kube CA cert file (as used by kubeadm)
-	CaCertFile string	= kubeadmconstants.KubernetesDir + "/pki" + "/" + kubeadmconstants.CACertAndKeyBaseName + ".crt"
+	CaCertFile string = kubeadmconstants.KubernetesDir + "/pki" + "/" + kubeadmconstants.CACertAndKeyBaseName + ".crt"
 
 	// CaKeyFile the file name of Kube CA key file (as used by kubeadm)
-	CaKeyFile string 	= kubeadmconstants.KubernetesDir + "/pki" + "/" + kubeadmconstants.CACertAndKeyBaseName + ".key"
+	CaKeyFile string = kubeadmconstants.KubernetesDir + "/pki" + "/" + kubeadmconstants.CACertAndKeyBaseName + ".key"
 )
 
 // Config  represents runtime params cfg structure.
 type Config struct {
-	EtcdClientConfig	etcd.Client
-	CaCert				string
-	CaKey				string
-	APIServer			*url.URL
-	KubeletID			string
-	CloudProvider		string
-	KubeVersion			string
-	MasterCount			uint
-	PodNetworkCidr		string
+	EtcdClientConfig etcd.Client
+	CaCert           string
+	CaKey            string
+	APIServer        *url.URL
+	KubeletID        string
+	CloudProvider    string
+	KubeVersion      string
+	MasterCount      uint
+	PodNetworkCidr   string
 }
 
 // SharedAssets - the data to be shared between all kubernetes masters
 type SharedAssets struct {
-	FrontProxyCa	string
-	FrontProxyCaKey	string
-	SaPub			string
-	SaKey			string
+	FrontProxyCa    string
+	FrontProxyCaKey string
+	SaPub           string
+	SaKey           string
 }
 
 // Kubeadmer allows for mocking out this lib for testing
 type Kubeadmer interface {
-	Addons() (error)
+	Addons() error
 	CreateKubeConfig() (err error)
 	CreatePKI() (err error)
 	LoadAndSerializeAssets() (assets string, err error)
@@ -107,10 +107,10 @@ func (k *Config) LoadAndSerializeAssets() (assets string, err error) {
 	saPubPemBytes, _ := certutil.EncodePublicKeyPEM(saPub)
 	// Re-encode the values now we've checked them...
 	sharedAssets := &SharedAssets{
-		SaPub:				string(saPubPemBytes[:]),
-		SaKey:				string(certutil.EncodePrivateKeyPEM(saKey)[:]),
-		FrontProxyCa:		string(certutil.EncodeCertPEM(frontProxyCACert)[:]),
-		FrontProxyCaKey:	string(certutil.EncodePrivateKeyPEM(frontProxyCAKey)[:]),
+		SaPub:           string(saPubPemBytes[:]),
+		SaKey:           string(certutil.EncodePrivateKeyPEM(saKey)[:]),
+		FrontProxyCa:    string(certutil.EncodeCertPEM(frontProxyCACert)[:]),
+		FrontProxyCaKey: string(certutil.EncodePrivateKeyPEM(frontProxyCAKey)[:]),
 	}
 
 	// Now json encode the structure
@@ -127,19 +127,19 @@ func (k *Config) SaveAssets(assets string) (err error) {
 	json.Unmarshal([]byte(assets), &sharedAssets)
 
 	// Now save each of the pem files...
-	err = ioutil.WriteFile(pkiDir + kubeadmconstants.ServiceAccountPublicKeyName, []byte(sharedAssets.SaPub), 0644)
+	err = ioutil.WriteFile(pkiDir+kubeadmconstants.ServiceAccountPublicKeyName, []byte(sharedAssets.SaPub), 0644)
 	if err != nil {
 		return fmt.Errorf("Service Account public key could not saved [%v]", err)
 	}
-	err = ioutil.WriteFile(pkiDir + kubeadmconstants.ServiceAccountPrivateKeyName, []byte(sharedAssets.SaKey), 0600)
+	err = ioutil.WriteFile(pkiDir+kubeadmconstants.ServiceAccountPrivateKeyName, []byte(sharedAssets.SaKey), 0600)
 	if err != nil {
 		return fmt.Errorf("Service Account private key could not saved [%v]", err)
 	}
-	err = ioutil.WriteFile(pkiDir + kubeadmconstants.FrontProxyCACertName, []byte(sharedAssets.FrontProxyCa), 0644)
+	err = ioutil.WriteFile(pkiDir+kubeadmconstants.FrontProxyCACertName, []byte(sharedAssets.FrontProxyCa), 0644)
 	if err != nil {
 		return fmt.Errorf("Front proxy public ca cert could not saved [%v]", err)
 	}
-	err = ioutil.WriteFile(pkiDir + kubeadmconstants.FrontProxyCAKeyName, []byte(sharedAssets.FrontProxyCaKey), 0600)
+	err = ioutil.WriteFile(pkiDir+kubeadmconstants.FrontProxyCAKeyName, []byte(sharedAssets.FrontProxyCaKey), 0600)
 	if err != nil {
 		return fmt.Errorf("Front proxy private key could not saved [%v]", err)
 	}
@@ -150,7 +150,7 @@ func (k *Config) SaveAssets(assets string) (err error) {
 // CreatePKI - generates all PKI assests on to disk
 func (k *Config) CreatePKI() (err error) {
 	var apiHost string
-	if apiHost, _, err = net.SplitHostPort(k.APIServer.Host) ; err != nil {
+	if apiHost, _, err = net.SplitHostPort(k.APIServer.Host); err != nil {
 		return err
 	}
 	log.Printf("Using host:%q", apiHost)
@@ -168,7 +168,7 @@ func (k *Config) CreateKubeConfig() (err error) {
 		return err
 	}
 	if err = createAKubeCfg(*k, kubeadmconstants.KubeletKubeConfigFileName,
-		"system:node:" + k.KubeletID, kubeadmconstants.NodesGroup); err != nil {
+		"system:node:"+k.KubeletID, kubeadmconstants.NodesGroup); err != nil {
 
 		return err
 	}
@@ -202,7 +202,7 @@ func GetKubeadmCfg(kmmCfg Config) (*kubeadmapi.MasterConfiguration, error) {
 	}
 	var apiHost string
 	var err error
-	if apiHost, _, err = net.SplitHostPort(kmmCfg.APIServer.Host) ; err != nil {
+	if apiHost, _, err = net.SplitHostPort(kmmCfg.APIServer.Host); err != nil {
 		return cfg, err
 	}
 	cfg.API.AdvertiseAddress = apiHost
@@ -236,7 +236,7 @@ func createAKubeCfg(cfg Config, file string, cn string, org string) (err error) 
 			"--organization", org)
 	}
 
-	kubecfgContents, err :=	runKubeadm(cfg, args)
+	kubecfgContents, err := runKubeadm(cfg, args)
 	if err != nil {
 		return fmt.Errorf("Error running kubeadm:%s", kubecfgContents)
 	}

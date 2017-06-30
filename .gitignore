@@ -3,7 +3,11 @@
 pkg/**/mocks/
 vendor
 /.glide
-/tests
+/docker
+/docker.tgz
+!/tests/certs/*.json
+/tests/certs/
+/tests/data/
 /kmm
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o

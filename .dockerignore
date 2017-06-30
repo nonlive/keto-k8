@@ -1,2 +1,4 @@
 *
+!bin/docker_image_downloads.sh
 !kmm
+!k8version.cfg

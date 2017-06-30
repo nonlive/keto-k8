@@ -1,8 +1,8 @@
 package kubeadm
 
 import (
-	"k8s.io/kubernetes/cmd/kubeadm/app/master"
 	kubeadmapi "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+	"k8s.io/kubernetes/cmd/kubeadm/app/master"
 )
 
 // WriteManifests - will save kubernetes master manifests from kmm config struct

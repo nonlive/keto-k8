@@ -1,30 +1,31 @@
 package etcd
 
 import (
-	"time"
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"golang.org/x/net/context"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/clientv3util"
 	"github.com/coreos/etcd/pkg/transport"
+	"golang.org/x/net/context"
 )
 
 // TODO: Add mockable interface for testing this package without reference to specific clientV3 lib
 
 // Client represents an etcd client configuration.
 type Client struct {
-	Endpoints			string
-	CaFileName			string
-	ClientCertFileName	string
-	ClientKeyFileName	string
+	Endpoints          string
+	CaFileName         string
+	ClientCertFileName string
+	ClientKeyFileName  string
+	LockTTL            time.Duration
 }
 
 // Clienter allows for mocking out this lib for testing
 type Clienter interface {
 	Get(key string) (value string, err error)
-	GetOrCreateLock(key string) (mylock bool, err error)
+	GetOrCreateLock(key string, lockKeyTTL time.Duration) (mylock bool, err error)
 	PutTx(key string, value string) (err error)
 	Delete(key string) (err error)
 }
@@ -35,9 +36,6 @@ var _ Clienter = (*Client)(nil)
 var (
 	// Timeout - For now a constant
 	Timeout = 5 * time.Second
-
-	// MaxTransactionTime - Also a constant - for now
-	MaxTransactionTime = 120 * time.Second
 )
 
 // New creates a new etcd client from configuration
@@ -58,7 +56,6 @@ func (c *Client) Get(key string) (value string, err error) {
 	}
 	defer cli.Close()
 
-	log.Printf("Getting %q key value...", key)
 	getresp, err := cli.Get(ctx, key)
 	if err != nil {
 		return "", err
@@ -79,8 +76,11 @@ func (c *Client) Get(key string) (value string, err error) {
 // GetOrCreateLock obtains a lock (true) if the first client to create lock
 // If TTL expired, will obtain lock (reset TTL)
 // If TTL not expired will return false
-func (c *Client) GetOrCreateLock(key string) (mylock bool, err error) {
+func (c *Client) GetOrCreateLock(key string, lockKeyTTL time.Duration) (mylock bool, err error) {
 	mylock = false
+
+	// TODO: make this a hash for each key (not needed for current use cases)
+	c.LockTTL = lockKeyTTL
 
 	err = c.SetLock(key)
 	if err != nil {
@@ -99,7 +99,7 @@ func (c *Client) GetOrCreateLock(key string) (mylock bool, err error) {
 // SetLock create an ETCD lock key with a TTL from now
 func (c *Client) SetLock(key string) (err error) {
 	now := time.Now()
-	ttl := now.Add(MaxTransactionTime)
+	ttl := now.Add(c.LockTTL)
 
 	// Try and create lock item with value of TTL
 	err = c.PutTx(key, ttl.Format(time.RFC3339))
@@ -116,28 +116,35 @@ func (c *Client) TryRecreateLock(key string) (recreated bool, err error) {
 		log.Printf("Lock (key - %q) not obtained, Can't get key:%q", key, err)
 		return false, err
 	}
+
 	// We have old TTL - parse it
 	otherTTLTime, e := time.Parse(
 		time.RFC3339,
 		othersTTLString)
 	if e != nil {
 		// Error parsing lock, corrupt, overwrite and get lock
-		err = c.OverWriteLock(key)
-	} else {
-		// See if TTL has passed and we should assume lock...
-		if time.Now().After(otherTTLTime) {
-			err = c.OverWriteLock(key)
-		} else {
-			log.Printf("Lock (key - %q) not obtained, TTL exists:%q", key, othersTTLString)
-			return false, nil
+		log.Printf("Error parsing lock:%q, error:%q", othersTTLString, e)
+		if err := c.OverWriteLock(key); err != nil {
+			return false, err
 		}
+		return true, nil
 	}
-	return false, err
+	// See if TTL has passed and we should assume lock...
+	now := time.Now()
+	if now.After(otherTTLTime) {
+		log.Printf("TTL exists but time passed so overwriting")
+		if err := c.OverWriteLock(key); err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+	log.Printf("Lock (key - %q) not obtained, TTL exists:%q", key, othersTTLString)
+	return false, nil
 }
 
 // OverWriteLock will delete and re-create a lock
 // TODO: this needs to be done as a transaction!
-func(c *Client) OverWriteLock(key string) (err error) {
+func (c *Client) OverWriteLock(key string) (err error) {
 	err = c.Delete(key)
 	if err != nil {
 		log.Printf("Failed deleteing lock:%q", key)
@@ -183,13 +190,13 @@ func (c *Client) PutTx(key string, value string) (err error) {
 	// the existing key which would generate potentially unwanted events,
 	// unless of course you wanted to do an overwrite no matter what.
 	txRet, err := kvc.Txn(ctx).
-	If(clientv3util.KeyMissing(key)).
-	Then(clientv3.OpPut(key, value)).
-	Commit()
+		If(clientv3util.KeyMissing(key)).
+		Then(clientv3.OpPut(key, value)).
+		Commit()
 
 	cancel() // context
 
-	if ! txRet.Succeeded {
+	if !txRet.Succeeded {
 		// We didn't create the lock - indicate with dedicated error:
 		log.Printf("Transaction didn't succeed - we didn't create lock!")
 		err = ErrKeyAlreadyExists

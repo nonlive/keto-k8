@@ -6,6 +6,8 @@ workspace:
 pipeline:
   test:
     image: golang:1.8
+    environment:
+      - DOCKER_HOST=tcp://127.0.0.1:2375
     commands:
       - mkdir -p /go/bin
       - "curl -s https://glide.sh/get | sh"
@@ -16,6 +18,9 @@ pipeline:
       - golint $(go list ./... | grep -v /vendor | grep -v /mocks)
       - go vet $(go list ./... | grep -v /vendor)
       - go get github.com/vektra/mockery/.../
+      # We need kubeadm and docker for integration tests
+      - ./bin/docker_image_downloads.sh
+      - ./bin/install_docker_client.sh
       - go generate $(go list ./... | grep -v /vendor)
       - go test -cover $(go list ./... | grep -v /vendor)
       - go build $(go list ./... | grep -v /vendor)

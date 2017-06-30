@@ -4,7 +4,6 @@ import (
 	"errors"
 )
 
-
 var (
 	// ErrKeyAlreadyExists - Testable error for when a key already exists
 	ErrKeyAlreadyExists = errors.New("Key Already Exists")

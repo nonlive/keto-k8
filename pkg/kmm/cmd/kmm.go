@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// ExitOnCompletionFlagName is the syntax for the flag
 const ExitOnCompletionFlagName string = "exit-on-completion"
 
 var (

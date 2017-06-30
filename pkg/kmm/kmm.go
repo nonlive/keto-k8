@@ -19,6 +19,7 @@ import (
 const assetKey string = "kmm-asset-key"
 const assetLockKey string = "kmm-asset-lock"
 const defaultBackOff time.Duration = 20 * time.Second
+const defaultLockTTL time.Duration = 120 * time.Second
 
 // Interface defined to enable testing of core functions without dependencies
 type Interface interface {
@@ -119,7 +120,7 @@ func (k *Config) CreateOrGetSharedAssets() (err error) {
 			log.Printf("Assets not present in etcd...\n")
 			// obtain lock...
 			// TODO: pass in lock TTL from here
-			mylock, err := k.Etcd.GetOrCreateLock(assetLockKey)
+			mylock, err := k.Etcd.GetOrCreateLock(assetLockKey, defaultLockTTL)
 			if err != nil {
 				// May need to add retry logic?
 				return err

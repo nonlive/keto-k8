@@ -90,7 +90,7 @@ func TestCreateOrGetSharedAssets(t *testing.T) {
 	// Test primary master:
 	// No assets stored, No pre-existing etcd lock, clean run...
 	m.Etcd.On("Get", assetKey).Return("", etcd.ErrKeyMissing).Once()
-	m.Etcd.On("GetOrCreateLock", assetLockKey).Return(true, nil).Once()
+	m.Etcd.On("GetOrCreateLock", assetLockKey, defaultLockTTL).Return(true, nil).Once()
 	m.Etcd.On("PutTx", assetKey, testAssets).Return(nil)
 
 	AddMasterAssertions(m, true)
