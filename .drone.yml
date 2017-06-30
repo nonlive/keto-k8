@@ -33,13 +33,25 @@ pipeline:
     commands:
       - docker build -t image .
 
-  docker_int_test:
+  docker_quick_test:
     image: docker:1.12
     environment:
       - DOCKER_HOST=tcp://127.0.0.1:2375
     commands:
-      # TODO: wire up the scripts in the ./tests directory
       - docker run -i image --help
+
+  docker_e2e_test:
+    image: quay.io/ukhomeofficedigital/keto-k8-e2e:latest
+    environment:
+      - KETO_K8_IMAGE=quay.io/ukhomeofficedigital/keto-k8:${DRONE_COMMIT_SHA}
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - ./tests/docker_save_and_load.sh tcp://127.0.0.1:2375 image ${KETO_K8_IMAGE}
+      - ./tests/e2e.sh
+    when:
+      event: [pull_request]
 
   image_to_quay:
     image: docker:1.12
