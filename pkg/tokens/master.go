@@ -56,12 +56,11 @@ subjects:
   namespace: kube-system
 ---
 apiVersion: extensions/v1beta1
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: keto-tokens
   namespace: kube-system
 spec:
-  replicas: 1
   template:
     metadata:
       labels:
@@ -84,12 +83,13 @@ spec:
               - key: node-role.kubernetes.io/master
                 operator: Exists
       tolerations:
-      - effect: NoSchedule
-        key: node-role.kubernetes.io/master
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
       hostNetwork: true
       serviceAccount: keto-tokens
       containers:
-      - name: gitlab
+      - name: keto-tockens
         image: {{ .ImageName }}
         imagePullPolicy: Always
         resources:
