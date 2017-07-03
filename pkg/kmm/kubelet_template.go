@@ -46,6 +46,9 @@ ExecStart=/usr/lib/coreos/kubelet-wrapper \
 --logtostderr=true \
 --network-plugin=cni \
 --pod-manifest-path=/etc/kubernetes/manifests \
+{{if .IsMaster }} \
+--register-schedulable=false \
+{{end}} \
 --require-kubeconfig=true \
 --system-reserved=cpu=50m,memory=100Mi
 
