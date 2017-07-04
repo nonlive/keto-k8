@@ -12,3 +12,4 @@ import:
 - package: k8s.io/kubernetes
   version: 1.6.6
 - package: github.com/UKHomeOffice/keto
+  version: b0b72576d4bccfd2b0aa968b8864b72a803edcad

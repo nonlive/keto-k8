@@ -43,6 +43,7 @@ type ConfigType struct {
 	Etcd                 etcd.Clienter
 	Kubeadm              kubeadm.Kubeadmer
 	Kmm                  Interface
+	NodeLabels           map[string]string
 }
 
 // Both structs here use the same config but are bound to different methods...
@@ -285,15 +286,12 @@ func (k *Kmm) UpdateCloudCfg() (err error) {
 		if node, err = getNodeInterface(k.KubeadmCfg.CloudProvider); err != nil {
 			return err
 		}
-		var clusterName string
-		if clusterName, err = node.GetClusterName(); err != nil {
-			return fmt.Errorf("Error getting cluster name cloud provider:%q", err)
+		nd, err := node.GetNodeData()
+		if err != nil {
+			return fmt.Errorf("Error getting node data from cloud provider:%q", err)
 		}
-		k.ClusterName = clusterName
-		var api string
-		if api, err = node.GetKubeAPIURL(); err != nil {
-			return fmt.Errorf("Error getting Api server from cloud provider:%q", err)
-		}
+		k.ClusterName = nd.ClusterName
+		api := nd.KubeAPIURL
 		// TODO: detect if a port set here...
 		url, err := url.Parse(api + ":6443")
 		if err != nil {
@@ -305,12 +303,11 @@ func (k *Kmm) UpdateCloudCfg() (err error) {
 			// url.Parse seems to always parse without error!
 			return fmt.Errorf("Empty API server [%s] obtained from cloud provider", api)
 		}
-		if k.KubeadmCfg.KubeVersion, err = node.GetKubeVersion(); err != nil {
-			return fmt.Errorf("Kubernetes version not specified from cloud provider [%v]", err)
-		}
+		k.KubeadmCfg.KubeVersion = nd.KubeVersion
 		if len(k.KubeadmCfg.KubeVersion) == 0 {
-			return fmt.Errorf("Error parsing Api server %s", api)
+			return fmt.Errorf("Error parsing kubeversion %s", k.KubeadmCfg.KubeVersion)
 		}
+		k.NodeLabels = nd.Labels
 	} else {
 		log.Printf("No cloud provider specified - not loading...")
 	}
