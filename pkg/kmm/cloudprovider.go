@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	dl "log"
 	log "github.com/Sirupsen/logrus"
 	"github.com/UKHomeOffice/keto/pkg/cloudprovider"
 )
@@ -72,7 +73,8 @@ func SaveCloudAssets(cloudprovider, etcdCa, etcdCaKey, kubeCa, kubeCaKey string)
 
 func getNodeInterface(cloudName string) (node cloudprovider.Node, err error) {
 	var cloud cloudprovider.Interface
-	if cloud, err = cloudprovider.InitCloudProvider(cloudName, nil); err != nil {
+	cl := dl.New(ioutil.Discard, "", 0)
+	if cloud, err = cloudprovider.InitCloudProvider(cloudName, cl); err != nil {
 		return nil, err
 	}
 	var supported = false

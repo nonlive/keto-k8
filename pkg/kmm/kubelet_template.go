@@ -45,6 +45,7 @@ ExecStart=/usr/lib/coreos/kubelet-wrapper \
 --lock-file=/var/run/lock/kubelet.lock \
 --logtostderr=true \
 --network-plugin=cni \
+--node-labels={{ .NodeLabels }} \
 --pod-manifest-path=/etc/kubernetes/manifests \
 {{if .IsMaster }} \
 --register-schedulable=false \

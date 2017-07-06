@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 	"text/template"
 
 	"github.com/UKHomeOffice/keto-k8/pkg/constants"
@@ -17,15 +18,23 @@ import (
 // CreateAndStartKubelet will call the CreateAndStartKubelet method with the correct configuration
 func (k *Kmm) CreateAndStartKubelet(master bool) error {
 
+	s := []string{}
+	for k, v := range k.NodeLabels {
+		s = append(s, fmt.Sprintf("%s=%s", k, v))
+	}
+	nodeLables := strings.Join(s, ",")
+
 	// Render kubelet.service
 	data := struct {
 		CloudProviderName string
-		KubeVersion       string
 		IsMaster          bool
+		KubeVersion       string
+		NodeLabels        string
 	}{
 		CloudProviderName: k.KubeadmCfg.CloudProvider,
-		KubeVersion:       k.KubeadmCfg.KubeVersion,
 		IsMaster:          master,
+		KubeVersion:       k.KubeadmCfg.KubeVersion,
+		NodeLabels:        nodeLables,
 	}
 	t := template.Must(template.New("kubeletUnit").Parse(kubeletTemplate))
 	var b bytes.Buffer

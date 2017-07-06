@@ -43,6 +43,7 @@ type ConfigType struct {
 	Etcd                 etcd.Clienter
 	Kubeadm              kubeadm.Kubeadmer
 	Kmm                  Interface
+	NodeLabels           map[string]string
 }
 
 // Both structs here use the same config but are bound to different methods...
@@ -72,7 +73,7 @@ func SetupCompute(cloud string, exitOnCompletion bool) (err error) {
 	}
 	// TODO: make testable interface here too
 	if err = tokens.WriteKetoTokenEnv(cloud, cfg.KubeadmCfg.APIServer.String()); err != nil {
-		return fmt.Errorf("Error saving KetoTokenEnv:%q", err)
+		return fmt.Errorf("error saving KetoTokenEnv: %q", err)
 	}
 
 	k.Kmm.CreateAndStartKubelet(false)
@@ -251,10 +252,10 @@ func (k *Kmm) InstallNetwork() (err error) {
 func (k *Kmm) CopyKubeCa() (err error) {
 	// First check for CA file...
 	if _, err := os.Stat(k.KubePersistentCaCert); os.IsNotExist(err) {
-		return errors.New("Kube CA cert not found at:" + k.KubePersistentCaCert)
+		return errors.New("kube CA cert not found at: " + k.KubePersistentCaCert)
 	}
 	if _, err := os.Stat(k.KubePersistentCaKey); os.IsNotExist(err) {
-		return errors.New("Kube CA key not found at:" + k.KubePersistentCaKey)
+		return errors.New("kube CA key not found at: " + k.KubePersistentCaKey)
 	}
 	if _, err = os.Stat(kubeadm.PkiDir); os.IsNotExist(err) {
 		os.Mkdir(kubeadm.PkiDir, os.ModePerm)
@@ -285,32 +286,28 @@ func (k *Kmm) UpdateCloudCfg() (err error) {
 		if node, err = getNodeInterface(k.KubeadmCfg.CloudProvider); err != nil {
 			return err
 		}
-		var clusterName string
-		if clusterName, err = node.GetClusterName(); err != nil {
-			return fmt.Errorf("Error getting cluster name cloud provider:%q", err)
+		nd, err := node.GetNodeData()
+		if err != nil {
+			return fmt.Errorf("error getting node data from cloud provider: %q", err)
 		}
-		k.ClusterName = clusterName
-		var api string
-		if api, err = node.GetKubeAPIURL(); err != nil {
-			return fmt.Errorf("Error getting Api server from cloud provider:%q", err)
-		}
+		k.ClusterName = nd.ClusterName
+		api := nd.KubeAPIURL
 		// TODO: detect if a port set here...
 		url, err := url.Parse(api + ":6443")
 		if err != nil {
-			return fmt.Errorf("Error parsing Api server %s [%v]", api, err)
+			return fmt.Errorf("error parsing Api server %s [%v]", api, err)
 		}
 		if len(api) > 0 {
 			k.KubeadmCfg.APIServer = url
 		} else {
 			// url.Parse seems to always parse without error!
-			return fmt.Errorf("Empty API server [%s] obtained from cloud provider", api)
+			return fmt.Errorf("empty API server [%s] obtained from cloud provider", api)
 		}
-		if k.KubeadmCfg.KubeVersion, err = node.GetKubeVersion(); err != nil {
-			return fmt.Errorf("Kubernetes version not specified from cloud provider [%v]", err)
-		}
+		k.KubeadmCfg.KubeVersion = nd.KubeVersion
 		if len(k.KubeadmCfg.KubeVersion) == 0 {
-			return fmt.Errorf("Error parsing Api server %s", api)
+			return fmt.Errorf("error parsing kubeversion %s", k.KubeadmCfg.KubeVersion)
 		}
+		k.NodeLabels = nd.Labels
 	} else {
 		log.Printf("No cloud provider specified - not loading...")
 	}
