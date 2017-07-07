@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -162,6 +163,11 @@ func (k *Config) CreatePKI() (err error) {
 
 // CreateKubeConfig - Creates all the kubeconfig files requires for masters
 func (k *Config) CreateKubeConfig() (err error) {
+	if k.KubeletID == "" {
+		if k.KubeletID, err = os.Hostname(); err != nil {
+			return err
+		}
+	}
 	if err = createAKubeCfg(*k, kubeadmconstants.AdminKubeConfigFileName,
 		"kubernetes-admin", kubeadmconstants.MastersGroup); err != nil {
 
