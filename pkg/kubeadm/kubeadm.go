@@ -28,7 +28,7 @@ import (
 const cmdKubeadm string = "kubeadm"
 
 var (
-	cmdOptsCerts      = []string{"alpha", "phase", "certs", "selfsign", "--cert-altnames"}
+	cmdOptsCerts      = []string{"alpha", "phase", "certs", "selfsign", "--apiserver-advertise-address", "0.0.0.0", "--cert-altnames"}
 	cmdOptsKubeconfig = []string{"alpha", "phase", "kubeconfig", "client-certs"}
 
 	// PkiDir - The directory kubeadm will store all pki assets
