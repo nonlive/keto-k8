@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -28,7 +29,7 @@ import (
 const cmdKubeadm string = "kubeadm"
 
 var (
-	cmdOptsCerts      = []string{"alpha", "phase", "certs", "selfsign", "--cert-altnames"}
+	cmdOptsCerts      = []string{"alpha", "phase", "certs", "selfsign", "--apiserver-advertise-address", "0.0.0.0", "--cert-altnames"}
 	cmdOptsKubeconfig = []string{"alpha", "phase", "kubeconfig", "client-certs"}
 
 	// PkiDir - The directory kubeadm will store all pki assets
@@ -162,6 +163,11 @@ func (k *Config) CreatePKI() (err error) {
 
 // CreateKubeConfig - Creates all the kubeconfig files requires for masters
 func (k *Config) CreateKubeConfig() (err error) {
+	if k.KubeletID == "" {
+		if k.KubeletID, err = os.Hostname(); err != nil {
+			return err
+		}
+	}
 	if err = createAKubeCfg(*k, kubeadmconstants.AdminKubeConfigFileName,
 		"kubernetes-admin", kubeadmconstants.MastersGroup); err != nil {
 
