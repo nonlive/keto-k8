@@ -6,6 +6,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/UKHomeOffice/keto-k8/pkg/etcd"
@@ -306,9 +307,32 @@ func (k *Kmm) UpdateCloudCfg() (err error) {
 			return fmt.Errorf("error parsing kubeversion %s", k.KubeadmCfg.KubeVersion)
 		}
 		k.NodeLabels = nd.Labels
+		k.KubeadmCfg.APIServerExtraArgs = stringToMap(nd.KubeArgs.APIServerExtraArgs)
+		k.KubeadmCfg.ControllerManagerExtraArgs = stringToMap(nd.KubeArgs.ControllerManagerExtraArgs)
+		k.KubeadmCfg.SchedulerExtraArgs = stringToMap(nd.KubeArgs.SchedulerExtraArgs)
 	} else {
 		log.Printf("No cloud provider specified - not loading...")
 	}
-
 	return nil
+}
+
+func stringToMap(args string) map[string]string {
+	argsMap := map[string]string{}
+
+	f := func(c rune) bool {
+		return c == '=' || c == ' '
+	}
+
+	argsAry := strings.Split(args, ",")
+	for _, arg := range argsAry {
+		// Separate into fields with func.
+		argItemAry := strings.FieldsFunc(arg, f)
+		if len(argItemAry) == 2 {
+			argsMap[argItemAry[0]] = argItemAry[1]
+		}
+		if len(argItemAry) == 1 {
+			argsMap[argItemAry[0]] = ""
+		}
+	}
+	return argsMap
 }

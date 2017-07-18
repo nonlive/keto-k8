@@ -42,17 +42,20 @@ var (
 	CaKeyFile string = kubeadmconstants.KubernetesDir + "/pki" + "/" + kubeadmconstants.CACertAndKeyBaseName + ".key"
 )
 
-// Config  represents runtime params cfg structure.
+// Config represents runtime params cfg structure.
 type Config struct {
-	EtcdClientConfig etcd.Client
-	CaCert           string
-	CaKey            string
-	APIServer        *url.URL
-	KubeletID        string
-	CloudProvider    string
-	KubeVersion      string
-	MasterCount      uint
-	PodNetworkCidr   string
+	EtcdClientConfig           etcd.Client
+	CaCert                     string
+	CaKey                      string
+	APIServer                  *url.URL
+	KubeletID                  string
+	CloudProvider              string
+	KubeVersion                string
+	MasterCount                uint
+	PodNetworkCidr             string
+	APIServerExtraArgs         map[string]string
+	ControllerManagerExtraArgs map[string]string
+	SchedulerExtraArgs         map[string]string
 }
 
 // SharedAssets - the data to be shared between all kubernetes masters
@@ -224,6 +227,9 @@ func GetKubeadmCfg(kmmCfg Config) (cfg *kubeadmapi.MasterConfiguration, err erro
 	cfg.Networking.DNSDomain = constants.DefaultServiceDNSDomain
 	cfg.Networking.ServiceSubnet = constants.DefaultServicesSubnet
 	cfg.Networking.PodSubnet = kmmCfg.PodNetworkCidr
+	cfg.APIServerExtraArgs = kmmCfg.APIServerExtraArgs
+	cfg.ControllerManagerExtraArgs = kmmCfg.ControllerManagerExtraArgs
+	cfg.SchedulerExtraArgs = kmmCfg.SchedulerExtraArgs
 	return cfg, nil
 }
 
