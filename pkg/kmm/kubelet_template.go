@@ -50,6 +50,7 @@ ExecStart=/usr/lib/coreos/kubelet-wrapper \
 {{if .IsMaster }} \
 --register-schedulable=false \
 {{end}} \
+{{ .KubeletExtraArgs }} \
 --require-kubeconfig=true \
 --system-reserved=cpu=50m,memory=100Mi
 

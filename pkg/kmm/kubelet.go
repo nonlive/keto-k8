@@ -29,11 +29,13 @@ func (k *Kmm) CreateAndStartKubelet(master bool) error {
 		CloudProviderName string
 		IsMaster          bool
 		KubeVersion       string
+		KubeletExtraArgs  string
 		NodeLabels        string
 	}{
 		CloudProviderName: k.KubeadmCfg.CloudProvider,
 		IsMaster:          master,
 		KubeVersion:       k.KubeadmCfg.KubeVersion,
+		KubeletExtraArgs:  k.KubeletExtraArgs,
 		NodeLabels:        nodeLables,
 	}
 	t := template.Must(template.New("kubeletUnit").Parse(kubeletTemplate))

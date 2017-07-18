@@ -44,6 +44,7 @@ type ConfigType struct {
 	Etcd                 etcd.Clienter
 	Kubeadm              kubeadm.Kubeadmer
 	Kmm                  Interface
+	KubeletExtraArgs     string
 	NodeLabels           map[string]string
 }
 
@@ -310,6 +311,7 @@ func (k *Kmm) UpdateCloudCfg() (err error) {
 		k.KubeadmCfg.APIServerExtraArgs = stringToMap(nd.KubeArgs.APIServerExtraArgs)
 		k.KubeadmCfg.ControllerManagerExtraArgs = stringToMap(nd.KubeArgs.ControllerManagerExtraArgs)
 		k.KubeadmCfg.SchedulerExtraArgs = stringToMap(nd.KubeArgs.SchedulerExtraArgs)
+		k.KubeletExtraArgs = nd.KubeArgs.KubeletExtraArgs
 	} else {
 		log.Printf("No cloud provider specified - not loading...")
 	}
