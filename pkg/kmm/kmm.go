@@ -46,6 +46,7 @@ type ConfigType struct {
 	Kmm                  Interface
 	KubeletExtraArgs     string
 	NodeLabels           map[string]string
+	NodeTaints           map[string]string
 }
 
 // Both structs here use the same config but are bound to different methods...
@@ -308,6 +309,7 @@ func (k *Kmm) UpdateCloudCfg() (err error) {
 			return fmt.Errorf("error parsing kubeversion %s", k.KubeadmCfg.KubeVersion)
 		}
 		k.NodeLabels = nd.Labels
+		k.NodeTaints = nd.Taints
 		k.KubeadmCfg.APIServerExtraArgs = stringToMap(nd.KubeArgs.APIServerExtraArgs)
 		k.KubeadmCfg.ControllerManagerExtraArgs = stringToMap(nd.KubeArgs.ControllerManagerExtraArgs)
 		k.KubeadmCfg.SchedulerExtraArgs = stringToMap(nd.KubeArgs.SchedulerExtraArgs)

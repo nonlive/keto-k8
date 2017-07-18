@@ -46,6 +46,9 @@ ExecStart=/usr/lib/coreos/kubelet-wrapper \
 --logtostderr=true \
 --network-plugin=cni \
 --node-labels={{ .NodeLabels }} \
+{{if .NodeTaints }} \
+--register-with-taints={{ .NodeTaints }} \
+{{end}} \
 --pod-manifest-path=/etc/kubernetes/manifests \
 {{if .IsMaster }} \
 --register-schedulable=false \
