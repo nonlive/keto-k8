@@ -9,6 +9,5 @@ set -e
 (
   export DOCKER_HOST=${SRC_DOCKER_HOST}
   docker tag ${SRC_IMAGE} ${DEST_IMAGE}
-  docker save ${DEST_IMAGE} -o image.tar
+  docker save ${DEST_IMAGE} -o ./tests/image.tar
 )
-docker load -i image.tar

@@ -48,7 +48,7 @@ pipeline:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     commands:
-      - ./tests/docker_save_and_load.sh tcp://127.0.0.1:2375 image ${KETO_K8_IMAGE}
+      - ./tests/docker_tag_and_save.sh tcp://127.0.0.1:2375 image ${KETO_K8_IMAGE}
       - ./tests/e2e.sh
     when:
       event: [pull_request]
