@@ -291,17 +291,15 @@ func (k *Kmm) UpdateCloudCfg() (err error) {
 			return fmt.Errorf("error getting node data from cloud provider: %q", err)
 		}
 		k.ClusterName = nd.ClusterName
-		api := nd.KubeAPIURL
-		// TODO: detect if a port set here...
-		url, err := url.Parse(api + ":6443")
+		apiURL, err := url.Parse(nd.KubeAPIURL)
 		if err != nil {
-			return fmt.Errorf("error parsing Api server %s [%v]", api, err)
+			return fmt.Errorf("error parsing Api server %s [%v]", nd.KubeAPIURL, err)
 		}
-		if len(api) > 0 {
-			k.KubeadmCfg.APIServer = url
+		if len(nd.KubeAPIURL) > 0 {
+			k.KubeadmCfg.APIServer = apiURL
 		} else {
 			// url.Parse seems to always parse without error!
-			return fmt.Errorf("empty API server [%s] obtained from cloud provider", api)
+			return fmt.Errorf("empty API server [%s] obtained from cloud provider", nd.KubeAPIURL)
 		}
 		k.KubeadmCfg.KubeVersion = nd.KubeVersion
 		if len(k.KubeadmCfg.KubeVersion) == 0 {

@@ -100,7 +100,7 @@ if ! docker run \
             --kube-ca-key=/data/ca/kube/ca.key \
             --network-provider=flannel \
             \
-            --kube-server=https://${HOSTNAME}:6443 \
+            --kube-server=https://${HOSTNAME} \
             --kube-version=${K8S_VERSION} \
             --exit-on-completion ; then
 
