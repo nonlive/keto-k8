@@ -150,8 +150,8 @@ func (k *Config) SaveAssets(assets string) (err error) {
 
 // CreatePKI - generates all PKI assests on to disk
 func (k *Config) CreatePKI() (err error) {
-	var apiHost string
-	if apiHost, _, err = net.SplitHostPort(k.APIServer.Host); err != nil {
+	apiHost := ""
+	if apiHost, err = getHost(k.APIServer); err != nil {
 		return err
 	}
 	log.Printf("Using host:%q", apiHost)
@@ -192,26 +192,22 @@ func (k *Config) CreateKubeConfig() (err error) {
 
 // GetKubeadmCfg - will transfer config from kmm to a config struct as used by kubeadm internaly
 // TODO: This is a hack until we can use kubeadm cmd directly...
-func GetKubeadmCfg(kmmCfg Config) (*kubeadmapi.MasterConfiguration, error) {
-	cfg := &kubeadmapi.MasterConfiguration{}
+func GetKubeadmCfg(kmmCfg Config) (cfg *kubeadmapi.MasterConfiguration, err error) {
+	cfg = &kubeadmapi.MasterConfiguration{}
 	port := kmmCfg.APIServer.Port()
 	if port == "" {
-		cfg.API.BindPort = 6443
+		cfg.API.BindPort = 443
 	} else {
 		// Parse the port
 		var i64 int64
-		var err error
 		if i64, err = strconv.ParseInt(port, 10, 32); err != nil {
 			return cfg, err
 		}
 		cfg.API.BindPort = int32(i64)
 	}
-	var apiHost string
-	var err error
-	if apiHost, _, err = net.SplitHostPort(kmmCfg.APIServer.Host); err != nil {
+	if cfg.API.AdvertiseAddress, err = getHost(kmmCfg.APIServer); err != nil {
 		return cfg, err
 	}
-	cfg.API.AdvertiseAddress = apiHost
 
 	if len(kmmCfg.EtcdClientConfig.Endpoints) > 0 {
 		cfg.Etcd.Endpoints = strings.Split(kmmCfg.EtcdClientConfig.Endpoints, ",")
@@ -261,4 +257,17 @@ func runKubeadm(cfg Config, cmdArgs []string) (out string, err error) {
 		return string(cmdOut[:]), err
 	}
 	return string(cmdOut[:]), nil
+}
+
+func getHost(url *url.URL) (host string, err error) {
+	host = ""
+
+	if len(url.Port()) > 0 {
+		if host, _, err = net.SplitHostPort(url.Host); err != nil {
+			return host, err
+		}
+	} else {
+		host = url.Host
+	}
+	return host, nil
 }

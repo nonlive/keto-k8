@@ -5,7 +5,7 @@ vendor
 /.glide
 /docker
 /docker.tgz
-/image.tar
+/tests/image.tar
 !/tests/certs/*.json
 /tests/certs/
 /tests/data/

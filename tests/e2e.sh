@@ -5,7 +5,7 @@ set -e
 
 [[ ${DEBUG} == 'true' ]] && set -x
 
-export KETO_K8_IMAGE=${KETO_K8_IMAGE:-quay.io/ukhomeofficedigital/keto-k8}
+KETO_K8_IMAGE=${KETO_K8_IMAGE:-quay.io/ukhomeofficedigital/keto-k8}
 name=${DRONE_BUILD_NUMBER}ketok8e2e
 script_dir=$( cd "$( dirname "$0" )" && pwd )
 
@@ -19,6 +19,8 @@ function cleanup() {
 # TODO: move to a service container when drone works https://github.com/UKHomeOffice/keto-k8/issues/54
 # Run tests in a container with privileged options (not part of drone spec - yet).
 cleanup
+export DEBUG
+export KETO_K8_IMAGE
 docker run \
        --name ${name} \
        -d \
@@ -26,6 +28,7 @@ docker run \
        --security-opt seccomp:unconfined \
        --cap-add=SYS_ADMIN \
        -e KETO_K8_IMAGE \
+       -e DEBUG \
        -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
        -v ${PWD} \
        -w ${PWD} \
@@ -33,6 +36,8 @@ docker run \
        quay.io/ukhomeofficedigital/keto-k8-e2e:latest
 
 # Copy resources to e2e test container:
+[ ! -f ./tests/image.tar ] && \
+  docker save ${KETO_K8_IMAGE} -o ./tests/image.tar # useful when running locally
 docker cp ./tests ${name}:${PWD}/tests
 docker cp k8version.cfg ${name}:${PWD}/
 
@@ -42,10 +47,11 @@ if docker exec ${name} ${PWD}/tests/run-keto-k8.sh ; then
   cleanup
 else
   echo "Setup masters test FAILED"
-  if [ -z "$PS1" ]; then
-    cleanup
+  if [[ ${DEBUG} == 'true' ]]; then
+    echo "investigate failing container:"
+    docker ps | grep ${name}
   else
-    echo "investigate failing container - docker ps"
+    cleanup
   fi
   exit 1
 fi

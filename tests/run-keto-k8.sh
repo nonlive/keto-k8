@@ -29,6 +29,7 @@ EOF
 }
 
 function set_keto_k8_deps() {
+  docker load -i image.tar
   # Copy the etcd pki files to emulate the cloud-provider and to work with paths constants in kubeadm and keto-k8
   cp ./certs/ca.pem /run/kubeapiserver/etcd-ca.crt
   cp ./certs/client.pem /run/kubeapiserver/etcd-client.crt
@@ -58,11 +59,18 @@ function fix_dind_proxy() {
   kubectl -n kube-system delete pods -l 'component=kube-proxy'
 }
 
+function stop_logs() {
+  # Stop background logging
+  kill -9 $! || true
+}
+
 set -e
+
+[[ ${DEBUG} == 'true' ]] && set -x
 
 script_dir=$( cd "$( dirname "$0" )" && pwd )
 cd ${script_dir}
-KETO_K8_IMAGE=${KETO_IMAGE:-quay.io/ukhomeofficedigital/keto-k8}
+KETO_K8_IMAGE=${KETO_K8_IMAGE:-quay.io/ukhomeofficedigital/keto-k8}
 source ../k8version.cfg
 
 # Setup Kubernetes dependencies
@@ -100,10 +108,11 @@ if ! docker run \
             --kube-ca-key=/data/ca/kube/ca.key \
             --network-provider=flannel \
             \
-            --kube-server=https://${HOSTNAME}:6443 \
+            --kube-server=https://${HOSTNAME} \
             --kube-version=${K8S_VERSION} \
             --exit-on-completion ; then
 
+  stop_logs
   echo "=============================================================="
   echo "e2e tests failed - see above keto-k8 output and below for logs"
   echo "=============================================================="
@@ -119,9 +128,12 @@ if ! docker run \
   echo "e2e tests failed - see above for logs and keto-k8 output"
   exit 1
 else
+  stop_logs
   echo "==========================================="
   echo "e2e Master setup test complete successfully"
 
+  # Give the deployed pods a bit of "pull" time...
+  sleep 30
   if kubectl get pods --namespace=kube-system | grep Running ; then echo "" ; fi
   echo "======================================"
   echo "e2e Master tests complete successfully"
@@ -132,5 +144,3 @@ if ! fix_dind_proxy ; then
 else
   echo "proxy fixed"
 fi
-# Stop background logging
-kill -9 $! || true
