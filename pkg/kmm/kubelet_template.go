@@ -16,9 +16,9 @@ Environment="RKT_OPTS=\
 --volume var-log,kind=host,source=/var/log --mount volume=var-log,target=/var/log \
 --volume var-lib-cni,kind=host,source=/var/lib/cni --mount volume=var-lib-cni,target=/var/lib/cni"
 EnvironmentFile=/etc/environment
-{{if not .IsMaster }}
+{{ if not .IsMaster }}
 EnvironmentFile=/etc/kubernetes/keto-token.env
-{{end}}
+{{ end }}
 ExecStartPre=/bin/mkdir -p /etc/kubernetes/manifests
 ExecStartPre=/bin/mkdir -p /etc/cni/net.d
 ExecStartPre=/bin/mkdir -p /opt/cni/bin
@@ -35,9 +35,9 @@ ExecStart=/usr/lib/coreos/kubelet-wrapper \
 --cluster-dns=10.96.0.10 \
 --cluster-domain=cluster.local \
 --cni-conf-dir=/etc/cni/net.d \
-{{if not .IsMaster }} \
+{{ if not .IsMaster }} \
 --experimental-bootstrap-kubeconfig=${KETO_TOKENS_KUBELET_CONF} \
-{{end}} \
+{{ end }} \
 --hostname-override="${COREOS_PRIVATE_IPV4}" \
 --image-gc-high-threshold=60 \
 --image-gc-low-threshold=40 \
@@ -46,10 +46,14 @@ ExecStart=/usr/lib/coreos/kubelet-wrapper \
 --logtostderr=true \
 --network-plugin=cni \
 --node-labels={{ .NodeLabels }} \
+{{ if .NodeTaints }} \
+--register-with-taints={{ .NodeTaints }} \
+{{ end }} \
 --pod-manifest-path=/etc/kubernetes/manifests \
-{{if .IsMaster }} \
+{{ if .IsMaster }} \
 --register-schedulable=false \
-{{end}} \
+{{ end }} \
+{{ .KubeletExtraArgs }} \
 --require-kubeconfig=true \
 --system-reserved=cpu=50m,memory=100Mi
 

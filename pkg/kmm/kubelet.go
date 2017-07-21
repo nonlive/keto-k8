@@ -23,18 +23,27 @@ func (k *Kmm) CreateAndStartKubelet(master bool) error {
 		s = append(s, fmt.Sprintf("%s=%s", k, v))
 	}
 	nodeLables := strings.Join(s, ",")
+	s = []string{}
+	for k, v := range k.NodeTaints {
+		s = append(s, fmt.Sprintf("%s=%s", k, v))
+	}
+	nodeTaints := strings.Join(s, ",")
 
 	// Render kubelet.service
 	data := struct {
 		CloudProviderName string
 		IsMaster          bool
 		KubeVersion       string
+		KubeletExtraArgs  string
 		NodeLabels        string
+		NodeTaints        string
 	}{
 		CloudProviderName: k.KubeadmCfg.CloudProvider,
 		IsMaster:          master,
 		KubeVersion:       k.KubeadmCfg.KubeVersion,
+		KubeletExtraArgs:  k.KubeletExtraArgs,
 		NodeLabels:        nodeLables,
+		NodeTaints:        nodeTaints,
 	}
 	t := template.Must(template.New("kubeletUnit").Parse(kubeletTemplate))
 	var b bytes.Buffer
