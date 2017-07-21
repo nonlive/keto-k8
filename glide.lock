@@ -1,5 +1,5 @@
-hash: 9fcb57d430ba01e4a0d95a129256c1541b0c59b4bfbc1690ab2bcefccdeefee4
-updated: 2017-07-10T10:37:56.159188624+01:00
+hash: a8e5a8c6abfc733aa64bfe3916d9e112c882396ee8c2a80cdccc94eddd3e93b1
+updated: 2017-07-21T14:26:52.859888636+01:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -248,12 +248,12 @@ imports:
   subpackages:
   - codec
 - name: github.com/UKHomeOffice/keto
-  version: d4d9cf9a2b5ddf16918c4240843211b428710a71
+  version: bf6f3e7be4a84e3ecf3af89b28b134e5c26a09ea
   subpackages:
   - pkg/cloudprovider
   - pkg/cloudprovider/providers
   - pkg/cloudprovider/providers/aws
-  - pkg/constants
+  - pkg/keto/util
   - pkg/model
 - name: golang.org/x/crypto
   version: d172538b2cfce0c13cee31e647d0367aa8cd2486
