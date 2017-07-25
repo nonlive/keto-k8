@@ -22,7 +22,7 @@ func (k *Kmm) CreateAndStartKubelet(master bool) error {
 	for k, v := range k.NodeLabels {
 		s = append(s, fmt.Sprintf("%s=%s", k, v))
 	}
-	nodeLables := strings.Join(s, ",")
+	nodeLabels := strings.Join(s, ",")
 	s = []string{}
 	for k, v := range k.NodeTaints {
 		s = append(s, fmt.Sprintf("%s=%s", k, v))
@@ -42,7 +42,7 @@ func (k *Kmm) CreateAndStartKubelet(master bool) error {
 		IsMaster:          master,
 		KubeVersion:       k.KubeadmCfg.KubeVersion,
 		KubeletExtraArgs:  k.KubeletExtraArgs,
-		NodeLabels:        nodeLables,
+		NodeLabels:        nodeLabels,
 		NodeTaints:        nodeTaints,
 	}
 	t := template.Must(template.New("kubeletUnit").Parse(kubeletTemplate))
